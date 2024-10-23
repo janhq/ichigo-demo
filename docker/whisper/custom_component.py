@@ -11,6 +11,7 @@ from typing import List, Optional, Union
 import io
 import urllib
 from tqdm import tqdm
+import torchaudio
 _HF_MODELS = {  
     "medium": "https://huggingface.co/jan-hq/WhisperVQ/resolve/main/medium_encoder_only.pt",
 }
@@ -154,6 +155,13 @@ class CustomRQBottleneckTransformer(RQBottleneckTransformer):
             return stoks[:,:n//2//self.downsample]
         else:
             return stoks
+    # overide
+    def encode_audio(self, audio):
+        if isinstance(audio, str):
+            x, sr = torchaudio.load(audio)
+            x = torchaudio.transforms.Resample(sr, 16000)(x)[0]
+            audio = x.unsqueeze(0)
+        return self.optimzed_encode_mel(self.log_mel_spectrogram(audio).to(self.device))
     
 if __name__ == "__main__":
     # Load the model
