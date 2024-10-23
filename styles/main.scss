@@ -94,6 +94,13 @@
   }
 }
 
+.btn-custom {
+  user-select: none; /* Prevent text selection */
+  touch-action: manipulation; /* Disable zoom on long-press */
+  -webkit-user-drag: none; /* Prevent image dragging */
+  -webkit-touch-callout: none; /* Disable callout menus */
+}
+
 @import "./gradientAnimation.scss";
 @import "./strawberryAnimation.scss";
 @import "./oldStrawberryAnimation.scss";

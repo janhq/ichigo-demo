@@ -75,7 +75,7 @@ const OldStrawberryAnimation = ({
         >
           <span className="eyes-straw-old" />
           <div
-            className="absolute w-full h-full bg-black top-44 left-10 transition-[width] ease-in-out duration-150 rotate-360 rounded-xl"
+            className="absolute w-full h-full bg-black top-44 left-10 transition-[width] ease-in-out duration-150 rotate-360 rounded-xl ml-2"
             style={{
               width: `24px`,
               height: `${newHeight}px`,
