@@ -9,7 +9,7 @@ from transformers import WhisperModel, WhisperProcessor
 import uvicorn
 from huggingface_hub import hf_hub_download
 from whisperspeech.vq_stoks import RQBottleneckTransformer
-
+from custom_component import CustomRQBottleneckTransformer   
 import logging
 import io
 from enum import Enum
@@ -30,18 +30,11 @@ if not os.path.exists("whisper-vq-stoks-v3-7lang-fixed.model"):
         filename="whisper-vq-stoks-v3-7lang-fixed.model",
         local_dir=".",
     )
-vq_model = RQBottleneckTransformer.load_model(
-
-    "whisper-vq-stoks-v3-7lang-fixed.model"
-).to(device)
-vq_model.ensure_whisper(device)
+vq_model = CustomRQBottleneckTransformer.load_vq_only(
+            "whisper-vq-stoks-v3-7lang-fixed.model"
+        ).to(device)
+vq_model.load_encoder(device)
 vq_model.eval()
-
-vq_model.whmodel[0].eval()
-del vq_model.whmodel[0].decoder  # we don't need this
-del vq_model._out_blocks
-del vq_model.positional_embedding
-torch.cuda.empty_cache()
 vq_model = torch.compile(vq_model)
 
 
