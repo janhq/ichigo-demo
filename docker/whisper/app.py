@@ -1,12 +1,15 @@
 import os
 import torch
 import torchaudio
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
+
 from fastapi.responses import JSONResponse
 from transformers import WhisperModel, WhisperProcessor
 import uvicorn
 from huggingface_hub import hf_hub_download
 from whisperspeech.vq_stoks import RQBottleneckTransformer
+
 import logging
 import io
 from enum import Enum
@@ -15,10 +18,12 @@ import tempfile
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Use the first GPU
 app = FastAPI()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 if not os.path.exists("whisper-vq-stoks-v3-7lang-fixed.model"):
     hf_hub_download(
         repo_id="jan-hq/WhisperVQ",
@@ -26,6 +31,7 @@ if not os.path.exists("whisper-vq-stoks-v3-7lang-fixed.model"):
         local_dir=".",
     )
 vq_model = RQBottleneckTransformer.load_model(
+
     "whisper-vq-stoks-v3-7lang-fixed.model"
 ).to(device)
 vq_model.ensure_whisper(device)
