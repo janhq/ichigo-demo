@@ -4,53 +4,56 @@ services:
     build:
       context: ./whisper
       dockerfile: Dockerfile
-    # network_mode: host
     volumes:
       - ./whisper/:/app/ # Change me
-    ports:
-      - "3348:3348"
+    expose:
+      - 3348/tcp
     command: [ "python", "app.py" ]
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+              device_ids: ['0']
+              capabilities: [gpu]
+
   fish-speech:
     build:
       context: ./fish-speech
       dockerfile: Dockerfile
-    # network_mode: host
     volumes:
       - ./fish-speech/data/:/opt/fish-speech/references/ # Change me
       - ./fish-speech/api.py:/opt/fish-speech/api.py # Change me /opt/fish-speech
-    ports:
-      - "22311:22311"
-    command: uvicorn 'api:app' --workers 3 --host 0.0.0.0 --port 22311 
+    expose:
+      - 22311/tcp
+    command: uvicorn 'api:app' --workers 2 --host 0.0.0.0 --port 22311 
     # [ "python", "-m", "tools.api", "--listen", "0.0.0.0:22311", "--llama-checkpoint-path", "checkpoints/fish-speech-1.4", "--decoder-checkpoint-path", "checkpoints/fish-speech-1.4/firefly-gan-vq-fsq-8x1024-21hz-generator.pth", "--decoder-config-name", "firefly_gan_vq", "--compile" ]
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+              device_ids: ['0']
+              capabilities: [gpu]
+
   tabbyapi:
     container_name: tabbyapi
-    build:
-      context: ./tabbyAPI-personal-fork
-      dockerfile: ./docker/Dockerfile
-      args:
-        DO_PULL: "true"
-    ports:
-      - "5000:5000"
+    image: ghcr.io/theroyallab/tabbyapi:latest
+    expose:
+      - 5000/tcp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     environment:
       NAME: TabbyAPI
       NVIDIA_VISIBLE_DEVICES: all
+      MODEL_NAME: Ichigo-llama3.1-s-instruct-v0.3-phase-3
     volumes:
-      - /mnt/nas/llama3s/:/app/models
+      - ./llama3s/models:/app/models
       - ./tabbyapi/config.yml:/app/config.yml
+      - ./tabbyapi/api_tokens.yml:/app/api_tokens.yml
     deploy:
       resources:
         reservations:
@@ -58,3 +61,54 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
+    depends_on:
+      model-downloader:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    expose:
+      - 3000/tcp
+    volumes:
+      - ../app:/app/app
+    environment:
+      - NODE_ENV=production
+      - OPENAI_API_KEY=jan26092024
+      - OPENAI_BASE_URL=http://tabbyapi:5000/v1/
+      - TOKENIZE_BASE_URL=http://whisper-speech:3348
+      - TTS_BASE_URL=http://fish-speech:22311/v1/
+    depends_on:
+      - tabbyapi
+      - whisper-speech
+      - fish-speech
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    pull_policy: always
+    restart: unless-stopped
+    env_file:
+      - .env.tunnel
+    expose:
+      - 43337/tcp
+    environment:
+      - TUNNEL_URL=http://frontend:3000
+      - TUNNEL_METRICS=0.0.0.0:43337
+    command: tunnel --no-autoupdate run
+    depends_on:
+      - frontend
+
+  model-downloader:
+    image: alpine:latest
+    volumes:
+      - ./llama3s/models:/models
+    command: >
+      sh -c "
+        apk add --no-cache git git-lfs &&
+        if [ ! -d /models/Ichigo-llama3.1-s-instruct-v0.3-phase-3 ]; then
+          git clone https://huggingface.co/homebrewltd/Ichigo-llama3.1-s-instruct-v0.3-phase-3 /models/Ichigo-llama3.1-s-instruct-v0.3-phase-3
+        else
+          echo 'Model already exists. Skipping download.'
+        fi
+      "
