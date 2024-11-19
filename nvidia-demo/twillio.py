@@ -20,8 +20,7 @@ async def receive_from_twilio(websocket: WebSocket, openai_ws, mark_queue, lates
                 latest_media_timestamp[0] = int(data['media']['timestamp'])
                 audio_append = {
                     "type": "input_audio_buffer.append",
-                    "audio": data['media']['payload']
-                }
+                    "audio": data['media']['payload']                }
                 await openai_ws.send(json.dumps(audio_append))
             elif data['event'] == 'start':
                 stream_sid[0] = data['start']['streamSid']
@@ -33,14 +32,15 @@ async def receive_from_twilio(websocket: WebSocket, openai_ws, mark_queue, lates
         if openai_ws.open:
             await openai_ws.close()
 
-async def send_to_twilio(websocket: WebSocket, openai_ws, mark_queue, latest_media_timestamp, stream_sid, last_assistant_item, response_start_timestamp_twilio):
+async def send_to_twilio(twillio_ws: WebSocket, openai_ws, mark_queue, latest_media_timestamp, stream_sid, last_assistant_item, response_start_timestamp_twilio):
     try:
         async for openai_message in openai_ws:
             response = json.loads(openai_message)
-            if response['type'] in LOG_EVENT_TYPES:
-                print(json.dumps(response, indent=2))
-
+            # if response['type'] in LOG_EVENT_TYPES:
+                
+            # get message from openai_ws
             if response.get('type') == 'response.audio.delta' and 'delta' in response:
+                print(json.dumps(response, indent=2))
                 audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
                 audio_delta = {
                     "event": "media",
@@ -49,23 +49,24 @@ async def send_to_twilio(websocket: WebSocket, openai_ws, mark_queue, latest_med
                         "payload": audio_payload
                     }
                 }
-                await websocket.send_json(audio_delta)
-
+                
+                # send msg back to user's phone
+                await twillio_ws.send_json(audio_delta)
+                
+                
                 if response_start_timestamp_twilio[0] is None:
                     response_start_timestamp_twilio[0] = latest_media_timestamp[0]
                     if SHOW_TIMING_MATH:
                         print(f"Setting start timestamp for new response: {response_start_timestamp_twilio[0]}ms")
-
                 if response.get('item_id'):
                     last_assistant_item[0] = response['item_id']
-
-                await send_mark(websocket, mark_queue, stream_sid[0])
-
+                await send_mark(twillio_ws, mark_queue, stream_sid[0])
+                
             if response.get('type') == 'input_audio_buffer.speech_started':
                 print("Speech started detected.")
                 if last_assistant_item[0]:
                     print(f"Interrupting response with id: {last_assistant_item[0]}")
-                    await handle_speech_started_event(openai_ws, websocket, mark_queue, latest_media_timestamp[0], stream_sid[0], last_assistant_item, response_start_timestamp_twilio)
+                    await handle_speech_started_event(openai_ws, twillio_ws, mark_queue, latest_media_timestamp[0], stream_sid[0], last_assistant_item, response_start_timestamp_twilio)
     except Exception as e:
         print(f"Error in send_to_twilio: {e}")
 
@@ -138,6 +139,7 @@ async def send_to_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, la
                 print(json.dumps(response, indent=2))
 
             if response.get('type') == 'response.audio.delta' and 'delta' in response:
+                # print(json.dumps(response, indent=2))
                 audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
                 audio_delta = {
                     "event": "media",
@@ -146,6 +148,8 @@ async def send_to_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, la
                         "payload": audio_payload
                     }
                 }
+                # print(json.dumps(audio_delta, indent=2))
+                
 
                 if response_start_timestamp_twilio is None:
                     response_start_timestamp_twilio = latest_media_timestamp

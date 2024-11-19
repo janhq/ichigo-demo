@@ -30,7 +30,6 @@ LOG_EVENT_TYPES = [
     'session.created'
 ]
 SHOW_TIMING_MATH = False
-temp = []
 app = FastAPI()
 
 if not OPENAI_API_KEY:
@@ -142,9 +141,7 @@ async def handle_incoming_call_test_offline(request: Request):
             receive_from_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, mark_queue),
             send_to_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, last_assistant_item, response_start_timestamp_twilio, mark_queue)
         )
-        with open("dummy.input", "w") as f:
-            for item in temp:
-                f.write(f"{item}\n")
+
 
     return {"message": "Homebrew Media Stream Server is running!"}
 
