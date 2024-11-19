@@ -12,7 +12,7 @@ from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect
 from discord_bot import create_discord_client
 from dotenv import load_dotenv
-from twillio import receive_from_twilio, receive_from_twilio_dummy, send_to_twilio, handle_speech_started_event, send_mark, send_to_twilio_dummy
+from twillio import receive_from_twilio, receive_from_twilio_alex_luke, receive_from_twilio_dummy, send_to_twilio, handle_speech_started_event, send_mark, send_to_twilio_dummy
 
 
 load_dotenv()
@@ -79,7 +79,9 @@ async def handle_incoming_call(request: Request):
     response.say("O.K. you can start talking!")
     host = request.url.hostname
     connect = Connect()
-    connect.stream(url=f'wss://{host}/media-stream')
+    # connect.stream(url=f'wss://{host}/media-stream')
+    connect.stream(url=f'wss://{host}/media-stream-alex-luke')
+    
     response.append(connect)
     return HTMLResponse(content=str(response), media_type="application/xml")
 
@@ -144,6 +146,25 @@ async def handle_incoming_call_test_offline(request: Request):
 
 
     return {"message": "Homebrew Media Stream Server is running!"}
+
+
+@app.websocket("/media-stream-alex-luke")
+async def handle_media_stream_alex_luke(websocket: WebSocket):
+    await client.send_log_message("Media stream connected")
+    await websocket.accept()
+
+    # Connection specific state
+    stream_sid = [None]
+    latest_media_timestamp = [0]
+    last_assistant_item = [None]
+    mark_queue = []
+    response_start_timestamp_twilio = [None]
+
+    await asyncio.gather(
+        receive_from_twilio_alex_luke(websocket),
+        # send_to_twilio(websocket)
+    )
+
 
 
 if __name__ == "__main__":

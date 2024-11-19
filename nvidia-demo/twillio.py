@@ -1,7 +1,13 @@
-import json
-import base64
+import os
+from pydub import AudioSegment
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
+from vad import get_speech_prob
+from alex import call_to_whisper, queue_out
+
+import base64
+import io
+import json
 
 # Constants and configurations
 SHOW_TIMING_MATH = False
@@ -36,8 +42,7 @@ async def send_to_twilio(twillio_ws: WebSocket, openai_ws, mark_queue, latest_me
     try:
         async for openai_message in openai_ws:
             response = json.loads(openai_message)
-            # if response['type'] in LOG_EVENT_TYPES:
-                
+            # if response['type'] in LOG_EVENT_TYPES:                
             # get message from openai_ws
             if response.get('type') == 'response.audio.delta' and 'delta' in response:
                 print(json.dumps(response, indent=2))
@@ -48,12 +53,9 @@ async def send_to_twilio(twillio_ws: WebSocket, openai_ws, mark_queue, latest_me
                     "media": {
                         "payload": audio_payload
                     }
-                }
-                
+                }                
                 # send msg back to user's phone
                 await twillio_ws.send_json(audio_delta)
-                
-                
                 if response_start_timestamp_twilio[0] is None:
                     response_start_timestamp_twilio[0] = latest_media_timestamp[0]
                     if SHOW_TIMING_MATH:
@@ -166,3 +168,56 @@ async def send_to_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, la
     except Exception as e:
         print(f"Error in send_to_twilio: {e}")
 
+
+
+FRAME_RATE = 16000
+INTERVAL = 1024 * 2
+DUMMY_LIMIT = 300
+async def receive_from_twilio_alex_luke(websocket: WebSocket):    
+    audio_bytes = bytearray()
+    dummy_limit = DUMMY_LIMIT
+    async for message in websocket.iter_text():
+        data = json.loads(message)
+        if data['event'] == 'media':
+            payload = data['media']['payload']
+            decoded_chunk = base64.b64decode(payload)
+            audio_bytes.extend(decoded_chunk)
+            # speech_probs = get_speech_prob(audio_bytes, sample_rate=FRAME_RATE)
+            # print(speech_probs)
+        with open("dummy-alex-luke.input", "a") as input_file:
+            input_file.write(message + "\n")
+        dummy_limit -= 1
+        if dummy_limit <= 0:
+            break
+    audio_segment = AudioSegment(
+        data=bytes(audio_bytes),
+        frame_rate=FRAME_RATE,
+        sample_width=1,
+        channels=1
+    )    
+    SYSTEM_MESSAGE = ("You are an AI agent developed by Homebrew. You can help users with their questions, provide information, and more. Please be cheerful and helpful.")    
+    messages = []
+    messages.append({"role": "system", "content": SYSTEM_MESSAGE})
+    audio_segment = AudioSegment(
+        data=bytes(audio_bytes),
+        frame_rate=FRAME_RATE,
+        sample_width=1,
+        channels=1
+    )
+    wav_io = io.BytesIO()
+    audio_segment.export(wav_io, format="wav")
+    wav_io.seek(0)
+    audio_bytes_in_io_bytes = wav_io
+    await call_to_whisper(audio_bytes_in_io_bytes, messages)
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    file_wav_path_out = os.path.join(current_path, "dummy-alex-luke_out")
+    for i, obj in enumerate(queue_out):
+        file_wav_path_out += f"_{i}.wav"
+        with open(file_wav_path_out, "wb") as f:
+            f.write(obj)
+    
+    with open("dummy-alex-luke.bytes", "wb") as bytes_file:
+        bytes_file.write(base64.b64encode(bytes(audio_bytes)))
+    with open("dummy-alex-luke.wav", "wb") as wav_file:
+        audio_segment.export(wav_file, format="wav")        
+                
