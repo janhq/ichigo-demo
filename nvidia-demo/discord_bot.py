@@ -7,7 +7,7 @@ class MyClient(discord.Client):
         self.log_channel_id = int(os.getenv('DISCORD_LOG_CHANNEL_ID', 0))
 
     async def on_ready(self):
-        await self.send_log_message(f'Logged in as {self.user}')
+        await self.send_log_message(f'New Nvidia demo session started')
 
     async def on_message(self, message):
         if message.author.bot:
@@ -15,7 +15,6 @@ class MyClient(discord.Client):
 
     async def send_log_message(self, content):
         if self.log_channel_id:
-            print(f"Attempting to access channel ID: {self.log_channel_id}")
             channel = self.get_channel(self.log_channel_id)
             if channel:
                 try:

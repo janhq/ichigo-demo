@@ -1,34 +1,36 @@
-# main.py
-import base64
 import os
 import json
+import base64
 import asyncio
-import discord
+import time
+import websockets
 import nest_asyncio
 import uvicorn
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, websockets
+from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect
-from dotenv import load_dotenv
 from discord_bot import create_discord_client
+from dotenv import load_dotenv
+from twillio import receive_from_twilio, receive_from_twilio_dummy, send_to_twilio, handle_speech_started_event, send_mark, send_to_twilio_dummy
+
 
 load_dotenv()
 
 # Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
-SYSTEM_MESSAGE = (
-    "You are an AI agent developed by Homebrew. You can help users with their questions, provide information, and more. Please be cheerful and helpful."
-)
+SYSTEM_MESSAGE = ("You are an AI agent developed by Homebrew. You can help users with their questions, provide information, and more. Please be cheerful and helpful.")
+INITIAL_MESSAGE = ("Hi!")
 VOICE = 'alloy'
 LOG_EVENT_TYPES = [
-    'error', 'response.content.done', 'rate_limits.updated',
+    'error', 'response.content.done', 
     'response.done', 'input_audio_buffer.committed',
     'input_audio_buffer.speech_stopped', 'input_audio_buffer.speech_started',
     'session.created'
 ]
 SHOW_TIMING_MATH = False
-
+temp = []
 app = FastAPI()
 
 if not OPENAI_API_KEY:
@@ -47,9 +49,8 @@ async def index_page():
 
 @app.websocket("/media-stream")
 async def handle_media_stream(websocket: WebSocket):
+    await client.send_log_message("Media stream connected")
     await websocket.accept()
-    await client.send_log_message("Client connected")
-
     async with websockets.connect(
         'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01',
         extra_headers={
@@ -59,120 +60,22 @@ async def handle_media_stream(websocket: WebSocket):
     ) as openai_ws:
         await initialize_session(openai_ws)
 
-        stream_sid = None
-        latest_media_timestamp = 0
-        last_assistant_item = None
+        # Connection specific state
+        stream_sid = [None]
+        latest_media_timestamp = [0]
+        last_assistant_item = [None]
         mark_queue = []
-        response_start_timestamp_twilio = None
+        response_start_timestamp_twilio = [None]
 
-        async def receive_from_homebrew():
-            nonlocal stream_sid, latest_media_timestamp
-            try:
-                async for message in websocket.iter_text():
-                    data = json.loads(message)
-                    if data['event'] == 'media' and openai_ws.open:
-                        latest_media_timestamp = int(data['media']['timestamp'])
-                        audio_append = {
-                            "type": "input_audio_buffer.append",
-                            "audio": data['media']['payload']
-                        }
-                        await openai_ws.send(json.dumps(audio_append))
-                    elif data['event'] == 'start':
-                        stream_sid = data['start']['streamSid']
-                        await client.send_log_message(f"Incoming stream has started {stream_sid}")
-                        response_start_timestamp_twilio = None
-                        latest_media_timestamp = 0
-                        last_assistant_item = None
-                    elif data['event'] == 'mark':
-                        if mark_queue:
-                            mark_queue.pop(0)
-            except WebSocketDisconnect:
-                await client.send_log_message("Client disconnected.")
-                if openai_ws.open:
-                    await openai_ws.close()
-
-        async def send_to_homebrew():
-            nonlocal stream_sid, last_assistant_item, response_start_timestamp_twilio
-            try:
-                async for openai_message in openai_ws:
-                    response = json.loads(openai_message)
-                    if response['type'] in LOG_EVENT_TYPES:
-                        await client.send_log_message(f"Received event: {response['type']} {response}")
-
-                    if response.get('type') == 'response.audio.delta' and 'delta' in response:
-                        audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
-                        audio_delta = {
-                            "event": "media",
-                            "streamSid": stream_sid,
-                            "media": {
-                                "payload": audio_payload
-                            }
-                        }
-                        await websocket.send_json(audio_delta)
-
-                        if response_start_timestamp_twilio is None:
-                            response_start_timestamp_twilio = latest_media_timestamp
-                            if SHOW_TIMING_MATH:
-                                await client.send_log_message(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
-
-                        if response.get('item_id'):
-                            last_assistant_item = response['item_id']
-
-                        await send_mark(websocket, stream_sid)
-
-                    if response.get('type') == 'input_audio_buffer.speech_started':
-                        await client.send_log_message("Speech started detected.")
-                        if last_assistant_item:
-                            await client.send_log_message(f"Interrupting response with id: {last_assistant_item}")
-                            await handle_speech_started_event()
-            except Exception as e:
-                await client.send_log_message(f"Error in send_to_homebrew: {e}")
-
-        async def handle_speech_started_event():
-            nonlocal response_start_timestamp_twilio, last_assistant_item
-            await client.send_log_message("Handling speech started event.")
-            if mark_queue and response_start_timestamp_twilio is not None:
-                elapsed_time = latest_media_timestamp - response_start_timestamp_twilio
-                if SHOW_TIMING_MATH:
-                    await client.send_log_message(f"Calculating elapsed time for truncation: {latest_media_timestamp} - {response_start_timestamp_twilio} = {elapsed_time}ms")
-
-                if last_assistant_item:
-                    if SHOW_TIMING_MATH:
-                        await client.send_log_message(f"Truncating item with ID: {last_assistant_item}, Truncated at: {elapsed_time}ms")
-
-                    truncate_event = {
-                        "type": "conversation.item.truncate",
-                        "item_id": last_assistant_item,
-                        "content_index": 0,
-                        "audio_end_ms": elapsed_time
-                    }
-                    await openai_ws.send(json.dumps(truncate_event))
-
-                await websocket.send_json({
-                    "event": "clear",
-                    "streamSid": stream_sid
-                })
-
-                mark_queue.clear()
-                last_assistant_item = None
-                response_start_timestamp_twilio = None
-
-        async def send_mark(connection, stream_sid):
-            if stream_sid:
-                mark_event = {
-                    "event": "mark",
-                    "streamSid": stream_sid,
-                    "mark": {"name": "responsePart"}
-                }
-                await connection.send_json(mark_event)
-                mark_queue.append('responsePart')
-
-        await asyncio.gather(receive_from_homebrew(), send_to_homebrew())
+        await asyncio.gather(
+            receive_from_twilio(websocket, openai_ws, mark_queue, latest_media_timestamp, stream_sid),
+            send_to_twilio(websocket, openai_ws, mark_queue, latest_media_timestamp, stream_sid, last_assistant_item, response_start_timestamp_twilio)
+        )
 
 @app.api_route("/incoming-call", methods=["GET", "POST"])
 async def handle_incoming_call(request: Request):
     response = VoiceResponse()
-    response.say("Please wait while we connect your call to the AI voice assistant, powered by Homebrew and the Ichigo Realtime API.")
+    response.say(INITIAL_MESSAGE)
     response.pause(length=1)
     response.say("O.K. you can start talking!")
     host = request.url.hostname
@@ -213,6 +116,38 @@ async def initialize_session(openai_ws):
     }
     await openai_ws.send(json.dumps(session_update))
     await send_initial_conversation_item(openai_ws)
+
+@app.api_route("/incoming-call-test-offline", methods=["GET", "POST"])
+async def handle_incoming_call_test_offline(request: Request):
+    await client.send_log_message("Media stream connected")
+    async with websockets.connect(
+        'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01',
+        extra_headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "OpenAI-Beta": "realtime=v1"
+        }
+    ) as openai_ws:
+        await initialize_session(openai_ws)
+
+        # Connection specific state
+        stream_sid = None
+        latest_media_timestamp = 0
+        last_assistant_item = None
+        mark_queue = []
+        response_start_timestamp_twilio = None        
+
+        unix_timestamp_begin = time.time()
+
+        await asyncio.gather(
+            receive_from_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, mark_queue),
+            send_to_twilio_dummy(openai_ws, stream_sid, latest_media_timestamp, last_assistant_item, response_start_timestamp_twilio, mark_queue)
+        )
+        with open("dummy.input", "w") as f:
+            for item in temp:
+                f.write(f"{item}\n")
+
+    return {"message": "Homebrew Media Stream Server is running!"}
+
 
 if __name__ == "__main__":
     nest_asyncio.apply()
