@@ -1,14 +1,6 @@
-import React from "react";
-
 const Logo = () => {
   return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g clipPath="url(#clip0_111_695)">
         <path
           d="M15.8944 1.57666C15.8944 1.57666 17.4131 2.55166 18.8662 3.69166C20.0719 4.63666 21.2212 5.74291 21.5137 6.08041L21.8156 7.81479L20.2294 9.62228L16.5187 9.08228L13.6312 6.32416L12.7425 4.13603L13.3762 2.51791L15.8944 1.57666Z"

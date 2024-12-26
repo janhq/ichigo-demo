@@ -1,6 +1,6 @@
 // AudioControllers.tsx
+import { MicPermission } from '@/app/components/Mic/MicPermission';
 import { Button } from '@/components/ui/button';
-import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTime } from '@/lib/utils';
 import { useLongPress } from '@uidotdev/usehooks';
@@ -62,7 +62,7 @@ const AudioControllers: React.FC<RecordingControlsProps> = ({ isRecording, isPla
 
   return (
     <>
-      {permission === 'denied' && <ModalPermissionDenied />}
+      {permission === 'denied' && <MicPermission />}
       <div className="flex flex-col justify-center items-center gap-4">
         <div className={twMerge('flex gap-3 justify-center items-end w-full p-4 rounded-lg absolute -top-24 h-20 invisible', isRecording && 'visible')}>
           {[...Array(6)].map((_, i) => (

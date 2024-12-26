@@ -1,7 +1,14 @@
 'use client';
+import { audioVisualizerAtom } from '@/app/atoms/audioVisualizer';
+import AudioButtons from '@/app/components/Audio/AudioButtons';
+import AudioControllers from '@/app/components/Audio/AudioControllers';
 import AudioSettings from '@/app/components/Audio/AudioSettings';
+import AudioVisualizers from '@/app/components/Audio/AudioVisualizers';
+import ChatButtons from '@/app/components/Chat/ChatButtons';
+import ChatPanel from '@/app/components/Chat/ChatPanel';
+import MicPermission from '@/app/components/Mic/MicPermission';
 import SocialLinks from '@/app/components/Navbar/SocialLinks';
-import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
+import { punctuation } from '@/app/types/chat';
 import { useOs } from '@/hooks/useOs';
 import { useWindowEvent } from '@/hooks/useWindowEvent';
 import { Message, useChat } from '@ai-sdk/react';
@@ -11,13 +18,6 @@ import { useGlobalAudioPlayer } from 'react-use-audio-player';
 import * as THREE from 'three';
 import { setTimeout } from 'timers';
 import WavEncoder from 'wav-encoder';
-import { audioVisualizerAtom } from './atoms/audioVisualizer';
-import AudioButtons from './components/Audio/AudioButtons';
-import AudioControllers from './components/Audio/AudioControllers';
-import AudioVisualizers from './components/Audio/AudioVisualizers';
-import ChatButtons from './components/Chat/ChatButtons';
-import ChatPanel from './components/Chat/ChatPanel';
-import { punctuation } from './types/chat';
 
 let spaceKeyHeld = false;
 let spaceKeyTimer: ReturnType<typeof setTimeout> | null = null;
@@ -454,10 +454,8 @@ const MainView = () => {
 
   return (
     <main className="px-8 flex flex-col w-full h-svh overflow-hidden">
-      {permission === 'denied' && <ModalPermissionDenied />}
-      <div className="flex-shrink-0">
-        <SocialLinks />
-      </div>
+      <MicPermission />
+      <SocialLinks />
       <div className="h-full bg-background flex justify-center items-center relative">
         <AudioVisualizers frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />
         <ChatPanel

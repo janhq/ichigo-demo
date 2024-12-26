@@ -1,14 +1,13 @@
-import { MdOutlineWbSunny, MdOutlineDarkMode } from "react-icons/md";
+import { MdOutlineDarkMode, MdOutlineWbSunny } from 'react-icons/md';
 
-import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from 'next-themes';
 
 const ThemeSwitch = () => {
   const { resolvedTheme, setTheme } = useTheme();
 
   const renderIcon = () => {
     switch (resolvedTheme) {
-      case "light":
+      case 'light':
         return <MdOutlineWbSunny size={24} />;
 
       default:
@@ -17,10 +16,7 @@ const ThemeSwitch = () => {
   };
 
   return (
-    <div
-      className="hidden md:flex ml-8 items-center justify-center cursor-pointer"
-      onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
-    >
+    <div className="hidden md:flex ml-8 items-center justify-center cursor-pointer" onClick={() => setTheme(resolvedTheme === 'light' ? 'dark' : 'light')}>
       {renderIcon()}
     </div>
   );

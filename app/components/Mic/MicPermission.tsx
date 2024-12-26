@@ -1,8 +1,11 @@
-import React from "react";
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useState } from 'react';
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+const MicPermission = () => {
+  const [permission] = useState<PermissionState>();
 
-export function ModalPermissionDenied() {
+  if (permission !== 'denied') return null;
+
   return (
     <Dialog open={true}>
       <DialogContent className="sm:max-w-md">
@@ -14,4 +17,6 @@ export function ModalPermissionDenied() {
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default MicPermission;

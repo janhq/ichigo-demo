@@ -1,23 +1,18 @@
-"use client";
+'use client';
 
-import { formatCompactNumber } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import { FaCircleExclamation } from "react-icons/fa6";
+import { formatCompactNumber } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+import { FaCircleExclamation } from 'react-icons/fa6';
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const RealtimeTracker: React.FC = () => {
   const [userCount, setUserCount] = useState<number>(0);
 
   useEffect(() => {
-    const eventSource = new EventSource("/api/sse");
+    const eventSource = new EventSource('/api/sse');
 
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = event => {
       setUserCount(Number(event.data)); // Update the user count
     };
 
@@ -40,10 +35,7 @@ const RealtimeTracker: React.FC = () => {
                   <FaCircleExclamation className="text-red-400" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-80 py-2" sideOffset={16}>
-                  <p className="text-sm text-left">
-                    With more than 3 concurrent users, you may experience
-                    increased latency, as this demo runs on a single 3090 GPU
-                  </p>
+                  <p className="text-sm text-left">With more than 3 concurrent users, you may experience increased latency, as this demo runs on a single 3090 GPU</p>
                 </TooltipContent>
               </Tooltip>
             )}
