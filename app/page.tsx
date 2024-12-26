@@ -2,21 +2,20 @@
 import AudioSettings from '@/app/components/Audio/AudioSettings';
 import SocialLinks from '@/app/components/Navbar/SocialLinks';
 import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useOs } from '@/hooks/useOs';
 import { useWindowEvent } from '@/hooks/useWindowEvent';
 import { Message, useChat } from '@ai-sdk/react';
 import { useAtom } from 'jotai/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { IoChatbubbleEllipsesSharp, IoSettingsSharp } from 'react-icons/io5';
 import { useGlobalAudioPlayer } from 'react-use-audio-player';
-import { twMerge } from 'tailwind-merge';
 import * as THREE from 'three';
 import { setTimeout } from 'timers';
 import WavEncoder from 'wav-encoder';
 import { audioVisualizerAtom } from './atoms/audioVisualizer';
+import AudioButtons from './components/Audio/AudioButtons';
 import AudioControllers from './components/Audio/AudioControllers';
 import AudioVisualizers from './components/Audio/AudioVisualizers';
+import ChatButtons from './components/Chat/ChatButtons';
 import ChatPanel from './components/Chat/ChatPanel';
 import { punctuation } from './types/chat';
 
@@ -488,20 +487,9 @@ const MainView = () => {
           stopRecording={stopRecording}
           stopAudio={stop}
         />
-        <div className={twMerge('absolute right-0 bottom-8 lg:bottom-16 transition-colors duration-500')}>
-          <div className="flex gap-4 items-center">
-            <span className="hidden md:block text-xs">{os == 'undetermined' ? <Skeleton className="h-4 w-[40px]" /> : <>{isMac ? '⌘' : 'Ctrl'} + B</>}</span>
-            <IoChatbubbleEllipsesSharp size={28} onClick={() => setIsChatVisible(!isChatVisible)} className={twMerge('cursor-pointer', isChatVisible && 'dark:text-blue-300 text-blue-700 ')} />
-          </div>
-        </div>
-
-        {permission === 'granted' && <AudioSettings isVisible={isSettingVisible} />}
-
-        {permission === 'granted' && (
-          <div className="absolute left-0 bottom-4 lg:bottom-14 w-10 h-10">
-            <IoSettingsSharp size={28} onClick={() => setIsSettingVisible(!isSettingVisible)} className={twMerge('cursor-pointer', isSettingVisible && 'dark:text-blue-300 text-blue-700 ')} />
-          </div>
-        )}
+        <ChatButtons os={os} isMac={isMac} isChatVisible={isChatVisible} onToggle={() => setIsChatVisible(!isChatVisible)} />
+        <AudioSettings isVisible={isSettingVisible} />
+        <AudioButtons isVisible={isSettingVisible} onToggle={() => setIsSettingVisible(!isSettingVisible)} permission={permission} />
       </div>
     </main>
   );

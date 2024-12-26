@@ -17,22 +17,44 @@ const AudioSettings = ({ isVisible }: AudioSettingsProps) => {
   const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedInputDevice, setSelectedInputDevice] = useState<string | null>(null);
   const [selectedOutputDevice, setSelectedOutputDevice] = useState<string | null>(null);
+  const [permission, setPermission] = useState<PermissionState>();
 
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      const inputs = devices.filter(device => device.kind === 'audioinput');
-      const outputs = devices.filter(device => device.kind === 'audiooutput');
-      setInputDevices(inputs);
-      setOutputDevices(outputs);
+    const checkMicrophonePermission = async () => {
+      try {
+        const micPermission = await navigator.permissions.query({
+          name: 'microphone' as PermissionName,
+        });
+        setPermission(micPermission.state as PermissionState);
 
-      if (inputs.length > 0) {
-        setSelectedInputDevice(inputs[0].deviceId);
+        micPermission.onchange = () => {
+          setPermission(micPermission.state as PermissionState);
+        };
+      } catch (error) {
+        console.error('Error checking microphone permission', error);
       }
-      if (outputs.length > 0) {
-        setSelectedOutputDevice(outputs[0].deviceId);
-      }
-    });
+    };
+
+    checkMicrophonePermission();
   }, []);
+
+  useEffect(() => {
+    if (permission === 'granted') {
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const inputs = devices.filter(device => device.kind === 'audioinput');
+        const outputs = devices.filter(device => device.kind === 'audiooutput');
+        setInputDevices(inputs);
+        setOutputDevices(outputs);
+
+        if (inputs.length > 0) {
+          setSelectedInputDevice(inputs[0].deviceId);
+        }
+        if (outputs.length > 0) {
+          setSelectedOutputDevice(outputs[0].deviceId);
+        }
+      });
+    }
+  }, [permission]);
 
   const handleInputChange = async (deviceId: string) => {
     setSelectedInputDevice(deviceId);
@@ -55,6 +77,8 @@ const AudioSettings = ({ isVisible }: AudioSettingsProps) => {
       console.error('Error setting audio output:', error);
     }
   };
+
+  if (permission !== 'granted') return null;
 
   return (
     <div className={twMerge('fixed z-20 p-4 border border-border rounded-lg mb-2 -left-80 bottom-24 invisible transition-all duration-500 bg-background', isVisible && 'visible opacity-1 left-0')}>
