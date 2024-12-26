@@ -20,7 +20,7 @@ const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(({ inputValue, is
           value={inputValue}
           disabled={isDisabled}
           onClick={onSubmit}
-          onChange={(e) => {
+          onChange={e => {
             onInputChange(e);
             if (e.target.value.includes('<|sound_start|>')) {
               setInput('This is an audio message');

@@ -18,7 +18,7 @@ const ChatMessages = ({ messages, containerRef, onScroll }: ChatMessagesProps) =
           </div>
         )}
         <div className="flex flex-col gap-4 overflow-x-hidden">
-          {messages.map((m) => {
+          {messages.map(m => {
             const displayContent = m.role === 'user' ? m.content.startsWith('<|sound_start|>') ? <i>🔊 This is an audio message 🔊</i> : m.content.split(' ').slice(0, 10).join(' ') : m.content;
             return (
               <div key={m.id} className={twMerge('px-3 py-1.5 rounded-lg max-w-[80%] shadow-sm', m.role === 'user' ? 'bg-foreground text-background ml-auto border' : 'border ')}>

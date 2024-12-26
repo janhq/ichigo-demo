@@ -1,9 +1,5 @@
 'use client';
 import SocialLinks from '@/app/components/Navbar/SocialLinks';
-import GradientAnimtion from '@/components/animations/gradientAnimation';
-import OldStrawberryAnimation from '@/components/animations/oldStraberry';
-import StrawberryAnimation from '@/components/animations/strawberryAnimation';
-import VertexAnimation from '@/components/animations/vertexAnimnation';
 import AudioSelector from '@/components/ui/audioSelector';
 import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -59,7 +55,7 @@ const MainView = () => {
 
   const [permission, setPermission] = useState<PermissionState>(); // Microphone permission state
 
-  const [selectedAudioVisualizer] = useAtom(audioVisualizerAtom);
+  const [] = useAtom(audioVisualizerAtom);
 
   const punctuation = ['.', ',', '!', '?', ':', ';', '"', "'", '(', ')', '[', ']', '{', '}', '-', '--', '...', '/', '\\'];
 
@@ -496,14 +492,6 @@ const MainView = () => {
     }
   };
 
-  const requestMicrophonePermission = async () => {
-    try {
-      // Request microphone access
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      setPermission('granted');
-    } catch (error) {}
-  };
-
   return (
     <main className="px-8 flex flex-col w-full h-svh overflow-hidden">
       {permission === 'denied' && <ModalPermissionDenied />}
@@ -511,23 +499,8 @@ const MainView = () => {
       <div className="flex-shrink-0">
         <SocialLinks />
       </div>
-
       <div className="h-full bg-background flex justify-center items-center relative">
-        <AudioVisualizers />
-        {os == 'undetermined' ? (
-          <Skeleton className="h-[300px] w-[300px] rounded-full" />
-        ) : (
-          <>
-            {selectedAudioVisualizer === 'vertex' && (
-              <div className="relative top-[50px] lg:top-0 w-full h-full">
-                <VertexAnimation frequency={frequency + 20} />
-              </div>
-            )}
-            {selectedAudioVisualizer === 'gradient' && <GradientAnimtion frequency={frequency} isLoading={isLoading} />}
-            {selectedAudioVisualizer === 'strawberry' && <StrawberryAnimation frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />}
-            {selectedAudioVisualizer === 'old-straw' && <OldStrawberryAnimation frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />}
-          </>
-        )}
+        <AudioVisualizers frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />
 
         <div
           className={twMerge(
@@ -547,13 +520,11 @@ const MainView = () => {
           isLoading={isLoading}
           time={time}
           maxTime={maxTime}
-          permission={permission}
           os={os}
           waveBars={waveBars}
           startRecording={startRecording}
           stopRecording={stopRecording}
           stopAudio={stop}
-          requestMicrophonePermission={requestMicrophonePermission}
         />
 
         <div className={twMerge('absolute right-0 bottom-8 lg:bottom-16 transition-colors duration-500')}>
