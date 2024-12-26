@@ -121,7 +121,10 @@ const MainView = () => {
   } = useChat({
     keepLastMessageOnError: true,
     onFinish(message) {
-      addToFetchQueue(message.id, currentText.current);
+      if (currentText.current) {
+        addToFetchQueue(message.id, currentText.current);
+      }
+
       console.debug("send on Finish: ", currentText.current);
     },
   });
@@ -185,7 +188,9 @@ const MainView = () => {
       currentText.current = currentText.current + newWord;
     } else if (currentCount.current < 60 && punctuation.includes(newWord)) {
       console.debug("send first: ", currentText.current);
-      addToFetchQueue(lastMessage.id, currentText.current);
+      if (currentText.current) {
+        addToFetchQueue(lastMessage.id, currentText.current);
+      }
       checkpoint.current = 60;
       currentText.current = ""; // in case of punctuation, reset the text
       currentCount.current = 0;
@@ -194,7 +199,9 @@ const MainView = () => {
       currentText.current = currentText.current + newWord;
     } else {
       console.debug("send: ", currentText.current);
-      addToFetchQueue(lastMessage.id, currentText.current);
+      if (currentText.current) {
+        addToFetchQueue(lastMessage.id, currentText.current);
+      }
       checkpoint.current = chunkSize === 60 ? 60 : 400;
       currentText.current = newWord;
       currentCount.current = 0;
@@ -207,7 +214,7 @@ const MainView = () => {
   // Send message when user stop record
   useEffect(() => {
     const preventDefault = {
-      preventDefault: () => {},
+      preventDefault: () => { },
     } as React.FormEvent;
 
     if (isInputVoice || time === maxTime) {
@@ -565,7 +572,7 @@ const MainView = () => {
       // Request microphone access
       await navigator.mediaDevices.getUserMedia({ audio: true });
       setPermission("granted");
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const longPressHandlers = useLongPress(startRecording, {
@@ -592,8 +599,8 @@ const MainView = () => {
                 className={twMerge(
                   "w-10 h-10 border border-border flex items-center justify-center rounded-lg cursor-pointer",
                   os !== "undetermined" &&
-                    isActive &&
-                    "border-2 border-blue-600"
+                  isActive &&
+                  "border-2 border-blue-600"
                 )}
                 onClick={() => setSelectedAudioVisualizer(item.id)}
               >
@@ -752,7 +759,7 @@ const MainView = () => {
                 className={twMerge(
                   "relative w-16 h-16 justify-center items-center cursor-pointer btn-custom flex lg:hidden",
                   (isPlayingAudio || isLoading) &&
-                    "pointer-events-none opacity-50"
+                  "pointer-events-none opacity-50"
                 )}
                 {...longPressHandlers}
               >
@@ -803,7 +810,7 @@ const MainView = () => {
                 className={twMerge(
                   "relative w-16 h-16 justify-center items-center cursor-pointer btn-custom hidden lg:flex",
                   (isPlayingAudio || isLoading) &&
-                    "pointer-events-none opacity-50"
+                  "pointer-events-none opacity-50"
                 )}
                 onClick={isRecording ? stopRecording : startRecording}
               >
@@ -858,7 +865,7 @@ const MainView = () => {
                 <span
                   className={twMerge(
                     (isPlayingAudio || isLoading) &&
-                      "pointer-events-none opacity-50"
+                    "pointer-events-none opacity-50"
                   )}
                 >
                   Hold space to talk to ichigo
@@ -875,7 +882,7 @@ const MainView = () => {
                 <span
                   className={twMerge(
                     (isPlayingAudio || isLoading) &&
-                      "pointer-events-none opacity-50"
+                    "pointer-events-none opacity-50"
                   )}
                 >
                   Press and hold record button to talk
