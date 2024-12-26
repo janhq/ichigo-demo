@@ -5,31 +5,31 @@ import StrawberryAnimation from '@/components/animations/strawberryAnimation';
 import VertexAnimation from '@/components/animations/vertexAnimnation';
 import AudioSelector from '@/components/ui/audioSelector';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
 import Navbar from '@/components/ui/navbar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOs } from '@/hooks/useOs';
 import { useWindowEvent } from '@/hooks/useWindowEvent';
 import { formatTime } from '@/lib/utils';
-import { useChat } from '@ai-sdk/react';
+import { Message, useChat } from '@ai-sdk/react';
 import { useLongPress } from '@uidotdev/usehooks';
-import { audioVisualizerList, punctuation } from 'app/types/chat';
 import { useAtom } from 'jotai/react';
 import PQueue from 'p-queue';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { IoChatbubbleEllipsesSharp, IoSend, IoSettingsSharp } from 'react-icons/io5';
+import { IoChatbubbleEllipsesSharp, IoSettingsSharp } from 'react-icons/io5';
 import { useGlobalAudioPlayer } from 'react-use-audio-player';
 import { twMerge } from 'tailwind-merge';
 import * as THREE from 'three';
+import { setTimeout } from 'timers';
 import WavEncoder from 'wav-encoder';
 import { audioVisualizerAtom } from './atoms/audioVisualizer';
-import { fetchTTS } from './services/audioQueue';
+import ChatInput from './components/Chat/ChatInput';
+import ChatMessages from './components/Chat/ChatMessages';
+import { audioVisualizerList } from './types/chat';
 
 let spaceKeyHeld = false;
 let spaceKeyTimer: ReturnType<typeof setTimeout> | null = null; // Define the correct type for setTimeout
 let longPressTriggered = false;
-
 const queue = new PQueue({ concurrency: 1 });
 
 const MainView = () => {
@@ -64,6 +64,8 @@ const MainView = () => {
   const [permission, setPermission] = useState<PermissionState>(); // Microphone permission state
 
   const [selectedAudioVisualizer, setSelectedAudioVisualizer] = useAtom(audioVisualizerAtom);
+
+  const punctuation = ['.', ',', '!', '?', ':', ';', '"', "'", '(', ')', '[', ']', '{', '}', '-', '--', '...', '/', '\\'];
 
   const { input, isLoading, messages, handleInputChange, handleSubmit, setInput } = useChat({
     keepLastMessageOnError: true,
@@ -334,6 +336,39 @@ const MainView = () => {
     fetchTTS(messageId, text);
   };
 
+  const fetchTTS = async (messageId: string, text: string) => {
+    try {
+      const index = audioMapIndex.current + 1;
+      audioMapIndex.current += 1;
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: text,
+          reference_id: messageId,
+          normalize: true,
+          format: 'wav',
+          latency: 'balanced',
+          max_new_tokens: 2048,
+          chunk_length: 200,
+          repetition_penalty: 1.5,
+        }),
+      });
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      audioURL.current[index] = audioUrl;
+
+      if (audioURLIndex.current === -1 && index === 0) {
+        audioURLIndex.current = 0;
+        playAudio();
+      } else if (currentWaitingIndex.current !== -1 && currentWaitingIndex.current === index) {
+        audioURLIndex.current += 1;
+        playAudio();
+      }
+    } catch (error) {
+      console.error('Error fetching TTS audio:', error);
+    }
+  };
   // Handle submit
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -525,46 +560,8 @@ const MainView = () => {
             isChatVisible && 'visible opacity-1 right-0'
           )}
         >
-          <div className="h-full overflow-x-hidden mt-2 mb-4" ref={listRef} onScroll={handleScroll}>
-            <div className={twMerge('space-y-4 h-full p-4', !messages.length && 'flex justify-center items-center')}>
-              {!messages.length && (
-                <div className=" flex justify-center items-center flex-col w-full">
-                  <h2 className="text-xl font-semibold">No chat history</h2>
-                  <p className="mt-1 text-muted-foreground">How can I help u today?</p>
-                </div>
-              )}
-              <div className="flex flex-col gap-4 overflow-x-hidden">
-                {messages.map((m) => {
-                  const displayContent = m.role === 'user' ? m.content.startsWith('<|sound_start|>') ? <i>🔊 This is an audio message 🔊</i> : m.content.split(' ').slice(0, 10).join(' ') : m.content;
-                  return (
-                    <div key={m.id} className={twMerge('px-3 py-1.5 rounded-lg max-w-[80%] shadow-sm', m.role === 'user' ? 'bg-foreground text-background ml-auto border' : 'border ')}>
-                      <p className="whitespace-pre-wrap">{displayContent}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <form onSubmit={handleFormSubmit}>
-            <div className="relative">
-              <IoSend size={20} className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer" />
-              <Input
-                ref={inputRef}
-                value={maskingValueInput}
-                disabled={isPlayingAudio || isLoading}
-                onClick={handleFormSubmit}
-                onChange={(e) => {
-                  handleInputChange(e);
-                  if (e.target.value.includes('<|sound_start|>')) {
-                    setInput('This is an audio message');
-                  }
-                }}
-                type="text"
-                placeholder="Type a message..."
-                className="w-full h-12 p-4 border-0 border-t rounded-t-none focus-within:outline-none focus-visible:ring-0 cursor-pointer"
-              />
-            </div>
-          </form>
+          <ChatMessages messages={messages as Message[]} containerRef={listRef} onScroll={handleScroll} />
+          <ChatInput ref={inputRef} inputValue={maskingValueInput} isDisabled={isPlayingAudio || isLoading} onSubmit={handleFormSubmit} onInputChange={handleInputChange} setInput={setInput} />
         </div>
       </div>
 
