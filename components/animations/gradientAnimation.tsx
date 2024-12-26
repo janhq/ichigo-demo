@@ -1,5 +1,4 @@
-import React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from 'tailwind-merge';
 
 interface Props {
   frequency: number;
@@ -12,19 +11,11 @@ const GradientAnimtion = ({ frequency, isLoading }: Props) => {
 
   return (
     <div
-      className={twMerge(
-        "rounded-full dark:bg-neutral-950 bg-neutral-800 relative z-10 shadow-sm top-[50px] lg:top-0",
-        isLoading && "bounce"
-      )}
+      className={twMerge('rounded-full dark:bg-neutral-950 bg-neutral-800 relative z-10 shadow-sm top-[50px] lg:top-0', isLoading && 'bounce')}
       style={{
         width: `${size}px`,
         height: `${size}px`,
-        animation: !isLoading
-          ? `rainbowPulse ${Math.max(
-              3 - frequency / 100,
-              0.5
-            )}s infinite linear`
-          : undefined,
+        animation: !isLoading ? `rainbowPulse ${Math.max(3 - frequency / 100, 0.5)}s infinite linear` : undefined,
       }}
     >
       <div

@@ -1,11 +1,10 @@
-import * as THREE from "three";
-import { Canvas, useFrame, extend, useThree } from "@react-three/fiber";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
-import { useRef, useMemo } from "react";
-import { useEffect } from "react";
-import { Vector2 } from "three";
+import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { Vector2 } from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 
 // Extend effect composer and passes to use in fiber
 extend({ EffectComposer, RenderPass, UnrealBloomPass });
@@ -18,13 +17,7 @@ interface ShaderMaterialProps {
   u_blue?: number;
 }
 
-const ShaderMaterial = ({
-  u_time = 0,
-  u_frequency = 1,
-  u_red = 1,
-  u_green = 1,
-  u_blue = 1,
-}: ShaderMaterialProps) => {
+const ShaderMaterial = ({ u_time = 0, u_frequency = 1, u_red = 1, u_green = 1, u_blue = 1 }: ShaderMaterialProps) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
@@ -37,7 +30,7 @@ const ShaderMaterial = ({
       u_green: { value: u_green },
       u_blue: { value: u_blue },
     }),
-    []
+    [],
   );
 
   useFrame(({ clock }) => {
@@ -45,11 +38,8 @@ const ShaderMaterial = ({
 
     if (meshRef.current) {
       // Update the time uniform continuously
-      (meshRef.current.material as THREE.ShaderMaterial).uniforms.u_time.value =
-        elapsedTime;
-      (
-        meshRef.current.material as THREE.ShaderMaterial
-      ).uniforms.u_frequency.value = u_frequency;
+      (meshRef.current.material as THREE.ShaderMaterial).uniforms.u_time.value = elapsedTime;
+      (meshRef.current.material as THREE.ShaderMaterial).uniforms.u_frequency.value = u_frequency;
     }
   });
 
@@ -172,13 +162,7 @@ const ShaderMaterial = ({
   return (
     <mesh ref={meshRef}>
       <icosahedronGeometry args={[5, 3]} />
-      <shaderMaterial
-        ref={materialRef}
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        wireframe
-      />
+      <shaderMaterial ref={materialRef} uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader} wireframe />
     </mesh>
   );
 };
@@ -189,12 +173,7 @@ const Effects = () => {
 
   useEffect(() => {
     const renderScene = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(
-      new Vector2(size.width, size.height),
-      2,
-      0.4,
-      0.85
-    );
+    const bloomPass = new UnrealBloomPass(new Vector2(size.width, size.height), 2, 0.4, 0.85);
     bloomPass.threshold = 0.5;
     bloomPass.strength = 1;
     bloomPass.radius = 0.8;
@@ -217,12 +196,7 @@ interface VertexAnimationProps {
 const VertexAnimation = ({ frequency }: VertexAnimationProps) => {
   return (
     <Canvas camera={{ position: [0, -2, 12] }} gl={{ alpha: true }}>
-      <ShaderMaterial
-        u_frequency={frequency}
-        u_red={0.36}
-        u_green={0.36}
-        u_blue={0.36}
-      />
+      <ShaderMaterial u_frequency={frequency} u_red={0.36} u_green={0.36} u_blue={0.36} />
       <Effects />
       {/* <ResizeHandler /> */}
     </Canvas>

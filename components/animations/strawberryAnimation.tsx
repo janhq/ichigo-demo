@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from 'tailwind-merge';
 
 interface Props {
   frequency: number;
@@ -7,35 +6,22 @@ interface Props {
   isPlayingAudio: boolean;
 }
 
-const StrawberryAnimation = ({
-  frequency,
-  isLoading,
-  isPlayingAudio,
-}: Props) => {
+const StrawberryAnimation = ({ frequency, isPlayingAudio }: Props) => {
   const defaultHeight = 1;
-  const newHeight = isPlayingAudio
-    ? 0.6 + (frequency / 100) * (1.2 - 0.6)
-    : defaultHeight;
+  const newHeight = isPlayingAudio ? 0.6 + (frequency / 100) * (1.2 - 0.6) : defaultHeight;
 
   const newBottom = (frequency / 100) * (10 - -10) - 10;
-  const newBorderRadius = isPlayingAudio ? (frequency / 100) * 100 : "50";
+  const newBorderRadius = isPlayingAudio ? (frequency / 100) * 100 : '50';
 
   return (
     <>
       <div
         className={twMerge(
-          "centerwrap-straw relative scale-75 top-[40px] lg:top-0 lg:scale-100"
+          'centerwrap-straw relative scale-75 top-[40px] lg:top-0 lg:scale-100',
           // isLoading && "bounce"
         )}
       >
-        <svg
-          width="38"
-          height="26"
-          viewBox="0 0 38 26"
-          fill="none"
-          className="absolute w-40 h-40 z-20 -top-20 left-20 rotate-12"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        <svg width="38" height="26" viewBox="0 0 38 26" fill="none" className="absolute w-40 h-40 z-20 -top-20 left-20 rotate-12" xmlns="http://www.w3.org/2000/svg">
           <path
             d="M18.6116 3.65347C18.6116 3.65347 21.7212 8.74214 21.8101 12.72C21.9173 17.5143 18.156 20.6531 18.156 20.6531C18.156 20.6531 15.3756 17.0469 15.5112 11.9896C15.6155 8.09934 18.6116 3.65347 18.6116 3.65347Z"
             fill="#519B07"
@@ -66,10 +52,7 @@ const StrawberryAnimation = ({
             d="M37.2208 10.37L34.6051 9.85133L34.8929 7.20026C35.6364 7.28093 36.3117 7.67012 36.7544 8.27279C37.1971 8.87559 37.3663 9.63653 37.2208 10.37ZM31.8969 9.75239C33.48 9.72919 34.6051 9.85133 34.6051 9.85133C34.6051 9.85133 34.388 10.9464 33.9291 12.4705C33.1683 14.9977 31.7427 18.7043 29.5404 20.5537C25.2855 24.1269 18.686 21.4208 18.686 21.4208C18.686 21.4208 19.1993 15.178 23.9352 11.7363C26.1205 10.148 29.5235 9.78706 31.8969 9.75239ZM18.686 21.4208C16.0284 21.2023 16.0284 21.2013 16.0285 21.2004L16.0287 21.1983L16.0291 21.1937L16.03 21.1828L16.0327 21.1541C16.0347 21.132 16.0375 21.1039 16.0411 21.0699C16.0483 21.002 16.0587 20.9108 16.0733 20.7988C16.1028 20.5751 16.1493 20.2663 16.2209 19.8911C16.3637 19.1437 16.6096 18.1157 17.0271 16.962C17.8516 14.6831 19.4156 11.7244 22.3675 9.57906C24.8345 7.78613 28.156 7.28626 30.4676 7.13959C31.6895 7.06213 32.7785 7.07626 33.5624 7.10919C33.9561 7.12586 34.2773 7.14733 34.5053 7.16533C34.6195 7.17426 34.7104 7.18239 34.7759 7.18852L34.8544 7.19626L34.8788 7.19879L34.8872 7.19959L34.8929 7.20026C34.8935 7.20039 34.8929 7.20026 34.6051 9.85133C37.2209 10.37 37.2209 10.3695 37.2208 10.37L37.2199 10.3752L37.2183 10.3832L37.2133 10.4076L37.1964 10.4891C37.182 10.5575 37.1612 10.6535 37.1341 10.7743C37.0799 11.0157 36.9996 11.3568 36.8924 11.7725C36.6788 12.6008 36.3539 13.7416 35.9075 14.9893C35.0652 17.3428 33.6068 20.6211 31.2553 22.5957C28.3239 25.0576 24.7341 25.2421 22.2383 24.9792C20.9533 24.8439 19.8375 24.5789 19.0439 24.3497C18.6443 24.2344 18.3188 24.1259 18.0857 24.0431C17.9691 24.0016 17.8749 23.9665 17.8057 23.94C17.7712 23.9267 17.7427 23.9155 17.7208 23.9068L17.6927 23.8956L17.6823 23.8913L17.6761 23.8888C17.6752 23.8884 17.6743 23.8881 18.686 21.4208ZM16.0284 21.2023L18.686 21.4208L17.6743 23.8881C16.5991 23.4472 15.9331 22.3605 16.0284 21.2023Z"
             fill="#156319"
           />
-          <path
-            d="M28.3848 20.05C31.3033 17.9289 33.0583 11.6789 33.0583 11.6789C26.0391 14.4079 22.3129 19.3257 21.1275 21.1757C21.1275 21.1757 25.4663 22.1711 28.3848 20.05Z"
-            fill="#56A409"
-          />
+          <path d="M28.3848 20.05C31.3033 17.9289 33.0583 11.6789 33.0583 11.6789C26.0391 14.4079 22.3129 19.3257 21.1275 21.1757C21.1275 21.1757 25.4663 22.1711 28.3848 20.05Z" fill="#56A409" />
         </svg>
 
         <div className="face-straw">
@@ -78,7 +61,7 @@ const StrawberryAnimation = ({
               className="eyes-straw-2"
               style={{
                 bottom: `${newBottom}px`,
-                transition: "linear",
+                transition: 'linear',
               }}
             >
               <div className="eye-straw-2 relative">
@@ -92,14 +75,14 @@ const StrawberryAnimation = ({
               className="blush"
               style={{
                 scale: `${newHeight}`,
-                transition: "linear",
+                transition: 'linear',
               }}
             ></div>
             <div
               className="blush right"
               style={{
                 scale: `${newHeight}`,
-                transition: "linear",
+                transition: 'linear',
               }}
             ></div>
             <div
@@ -108,8 +91,8 @@ const StrawberryAnimation = ({
                 {
                   scale: `${newHeight}`,
                   bottom: `${newBottom}px`,
-                  transition: "linear",
-                  "--border-radius": `${newBorderRadius}%`,
+                  transition: 'linear',
+                  '--border-radius': `${newBorderRadius}%`,
                 } as any
               }
             ></div>
