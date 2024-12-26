@@ -19,27 +19,8 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     'no-return-await': 'error',
-    'max-len': [
-      'error',
-      {
-        code: 200,
-        ignoreUrls: true,
-        ignoreStrings: true,
-        ignoreTemplateLiterals: true,
-        ignoreComments: true,
-      },
-    ],
-    'prettier/prettier': [
-      'error',
-      {
-        printWidth: 200,
-        tabWidth: 2,
-        semi: true,
-        singleQuote: true,
-        trailingComma: 'all',
-        bracketSpacing: true,
-        arrowParens: 'avoid',
-      },
-    ],
+    'max-len': ['error', { code: 200, ignoreUrls: true, ignoreStrings: true, ignoreTemplateLiterals: true, ignoreComments: true }],
+    'prettier/prettier': ['error', { printWidth: 200, tabWidth: 2, semi: true, singleQuote: true, trailingComma: 'all', bracketSpacing: true, arrowParens: 'avoid' }],
+    'no-unused-vars': 'warn',
   },
 };

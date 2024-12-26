@@ -1,14 +1,15 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit",
-    "source.fixAll.eslint": "explicit",
+    "source.fixAll": "always",
+    "source.fixAll.eslint": "always",
     "source.organizeImports": "always",
     "source.sortImports": "explicit",
     "source.fixAll.pylance": "always",
     "source.convertImportFormat": "always",
-    "source.unusedImports": "always"
+    "source.unusedImports": "always",
+    "source.removeUnused.ts": "always"
   },
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "prettier.semi": true,
@@ -34,9 +35,6 @@
   },
   "files.exclude": { "**/__pycache__": true, "**/venv": true },
   "search.exclude": { "**/__pycache__": true, "**/venv": true },
-  "eslint.options": {
-    "rules": { "max-len": ["error", { "code": 200 }] }
-  },
   "files.trimTrailingWhitespace": false,
   "files.trimFinalNewlines": true,
   "files.enableTrash": true,
