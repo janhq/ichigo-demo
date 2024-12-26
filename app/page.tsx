@@ -1,57 +1,34 @@
-"use client";
-import PQueue from "p-queue";
-
-import * as THREE from "three";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import Navbar from "@/components/ui/navbar";
-import { IoChatbubbleEllipsesSharp, IoSettingsSharp } from "react-icons/io5";
-import { IoSend } from "react-icons/io5";
-import { twMerge } from "tailwind-merge";
-import { Input } from "@/components/ui/input";
-import { useGlobalAudioPlayer } from "react-use-audio-player";
-import { useChat } from "@ai-sdk/react";
-import { useWindowEvent } from "@/hooks/useWindowEvent";
-import { useOs } from "@/hooks/useOs";
-import WavEncoder from "wav-encoder";
-import { formatTime } from "@/lib/utils";
-import { setTimeout } from "timers";
-import { Skeleton } from "@/components/ui/skeleton";
-import GradientAnimtion from "@/components/animations/gradientAnimation";
-
-import StrawberryAnimation from "@/components/animations/strawberryAnimation";
-
-import { atomWithStorage } from "jotai/utils";
-import { useAtom } from "jotai/react";
-import AudioSelector from "@/components/ui/audioSelector";
-import { Button } from "@/components/ui/button";
-import { ModalPermissionDenied } from "@/components/ui/modalPemissionDenied";
-import VertexAnimation from "@/components/animations/vertexAnimnation";
-import OldStrawberryAnimation from "@/components/animations/oldStraberry";
-import { useLongPress } from "@uidotdev/usehooks";
-const audioVisualizerAtom = atomWithStorage("audioVisualizer", "old-straw");
+'use client';
+import GradientAnimtion from '@/components/animations/gradientAnimation';
+import OldStrawberryAnimation from '@/components/animations/oldStraberry';
+import StrawberryAnimation from '@/components/animations/strawberryAnimation';
+import VertexAnimation from '@/components/animations/vertexAnimnation';
+import AudioSelector from '@/components/ui/audioSelector';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
+import Navbar from '@/components/ui/navbar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useOs } from '@/hooks/useOs';
+import { useWindowEvent } from '@/hooks/useWindowEvent';
+import { formatTime } from '@/lib/utils';
+import { useChat } from '@ai-sdk/react';
+import { useLongPress } from '@uidotdev/usehooks';
+import { audioVisualizerList, punctuation } from 'app/types/chat';
+import { useAtom } from 'jotai/react';
+import PQueue from 'p-queue';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { IoChatbubbleEllipsesSharp, IoSend, IoSettingsSharp } from 'react-icons/io5';
+import { useGlobalAudioPlayer } from 'react-use-audio-player';
+import { twMerge } from 'tailwind-merge';
+import * as THREE from 'three';
+import WavEncoder from 'wav-encoder';
+import { audioVisualizerAtom } from './atoms/audioVisualizer';
+import { fetchTTS } from './services/audioQueue';
 
 let spaceKeyHeld = false;
 let spaceKeyTimer: ReturnType<typeof setTimeout> | null = null; // Define the correct type for setTimeout
 let longPressTriggered = false;
-
-const audioVisualizerList = [
-  {
-    id: "strawberry",
-    display: "🍓",
-  },
-  {
-    id: "gradient",
-    display: "🖲️",
-  },
-  {
-    id: "vertex",
-    display: "🌐",
-  },
-  {
-    id: "old-straw",
-    display: "🍓",
-  },
-];
 
 const queue = new PQueue({ concurrency: 1 });
 
@@ -70,9 +47,9 @@ const MainView = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const { load, stop } = useGlobalAudioPlayer();
   const audioAnalyser = useRef<THREE.AudioAnalyser | null>(null);
-  const currentText = useRef("");
+  const currentText = useRef('');
   const currentCount = useRef(0);
-  const lastMsg = useRef("");
+  const lastMsg = useRef('');
   const checkpoint = useRef(10);
   let audioContext: AudioContext;
   let animationFrameId: number;
@@ -86,51 +63,21 @@ const MainView = () => {
 
   const [permission, setPermission] = useState<PermissionState>(); // Microphone permission state
 
-  const [selectedAudioVisualizer, setSelectedAudioVisualizer] =
-    useAtom(audioVisualizerAtom);
+  const [selectedAudioVisualizer, setSelectedAudioVisualizer] = useAtom(audioVisualizerAtom);
 
-  const punctuation = [
-    ".",
-    ",",
-    "!",
-    "?",
-    ":",
-    ";",
-    '"',
-    "'",
-    "(",
-    ")",
-    "[",
-    "]",
-    "{",
-    "}",
-    "-",
-    "--",
-    "...",
-    "/",
-    "\\",
-  ];
-
-  const {
-    input,
-    isLoading,
-    messages,
-    handleInputChange,
-    handleSubmit,
-    setInput,
-  } = useChat({
+  const { input, isLoading, messages, handleInputChange, handleSubmit, setInput } = useChat({
     keepLastMessageOnError: true,
     onFinish(message) {
       if (currentText.current) {
         addToFetchQueue(message.id, currentText.current);
       }
 
-      console.debug("send on Finish: ", currentText.current);
+      console.debug('send on Finish: ', currentText.current);
     },
   });
 
-  const isInputVoice = input.startsWith("<|sound_start|>");
-  const maskingValueInput = isInputVoice ? "🔊 🔊 🔊 " : input;
+  const isInputVoice = input.startsWith('<|sound_start|>');
+  const maskingValueInput = isInputVoice ? '🔊 🔊 🔊 ' : input;
   const radius = 16; // Circle radius
   const circumference = 2 * Math.PI * radius; // Circumference of the circle
   const dashOffset = circumference - (time / (maxTime - 1)) * circumference;
@@ -139,7 +86,7 @@ const MainView = () => {
     const checkMicrophonePermission = async () => {
       try {
         const micPermission = await navigator.permissions.query({
-          name: "microphone" as PermissionName,
+          name: 'microphone' as PermissionName,
         });
         setPermission(micPermission.state as PermissionState);
 
@@ -148,7 +95,7 @@ const MainView = () => {
           setPermission(micPermission.state as PermissionState);
         };
       } catch (error) {
-        console.error("Error checking microphone permission", error);
+        console.error('Error checking microphone permission', error);
       }
     };
 
@@ -175,11 +122,9 @@ const MainView = () => {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
 
-    if (!lastMessage || lastMessage.role !== "assistant") return;
+    if (!lastMessage || lastMessage.role !== 'assistant') return;
 
-    const newWord = lastMsg.current
-      ? lastMessage?.content.replace(lastMsg.current, "")
-      : lastMessage?.content;
+    const newWord = lastMsg.current ? lastMessage?.content.replace(lastMsg.current, '') : lastMessage?.content;
 
     const chunkSize = checkpoint.current ?? 400;
 
@@ -187,18 +132,18 @@ const MainView = () => {
     if (currentCount.current < chunkSize) {
       currentText.current = currentText.current + newWord;
     } else if (currentCount.current < 60 && punctuation.includes(newWord)) {
-      console.debug("send first: ", currentText.current);
+      console.debug('send first: ', currentText.current);
       if (currentText.current) {
         addToFetchQueue(lastMessage.id, currentText.current);
       }
       checkpoint.current = 60;
-      currentText.current = ""; // in case of punctuation, reset the text
+      currentText.current = ''; // in case of punctuation, reset the text
       currentCount.current = 0;
     } else if (chunkSize === 10) {
       // first chunk
       currentText.current = currentText.current + newWord;
     } else {
-      console.debug("send: ", currentText.current);
+      console.debug('send: ', currentText.current);
       if (currentText.current) {
         addToFetchQueue(lastMessage.id, currentText.current);
       }
@@ -214,7 +159,7 @@ const MainView = () => {
   // Send message when user stop record
   useEffect(() => {
     const preventDefault = {
-      preventDefault: () => { },
+      preventDefault: () => {},
     } as React.FormEvent;
 
     if (isInputVoice || time === maxTime) {
@@ -226,7 +171,7 @@ const MainView = () => {
   }, [isInputVoice, time]);
 
   const os = useOs();
-  const isMac = os === "macos";
+  const isMac = os === 'macos';
 
   // Make the input focus when the chat is open.
   useEffect(() => {
@@ -240,16 +185,16 @@ const MainView = () => {
   }, [isChatVisible]);
 
   // Hotkey toogle chatbox and record audio
-  useWindowEvent("keydown", (event) => {
+  useWindowEvent('keydown', (event) => {
     const prefix = isMac ? event.metaKey : event.ctrlKey;
 
     // Toggle chat visibility with Ctrl/Command + B
-    if (event.code === "KeyB" && prefix) {
+    if (event.code === 'KeyB' && prefix) {
       setIsChatVisible(!isChatVisible);
     }
 
     // // Handle space key press (start timer for long press)
-    if (event.code === "Space" && event.repeat && !spaceKeyHeld) {
+    if (event.code === 'Space' && event.repeat && !spaceKeyHeld) {
       spaceKeyHeld = true;
       longPressTriggered = false; // Reset the long press trigger
 
@@ -266,8 +211,8 @@ const MainView = () => {
     }
   });
 
-  useWindowEvent("keyup", (event) => {
-    if (event.code === "Space") {
+  useWindowEvent('keyup', (event) => {
+    if (event.code === 'Space') {
       if (spaceKeyTimer !== null) {
         clearTimeout(spaceKeyTimer);
         spaceKeyTimer = null; // Reset the timer to null after clearing it
@@ -281,9 +226,7 @@ const MainView = () => {
         event.preventDefault();
         event.stopPropagation();
         stopRecording();
-        console.debug(
-          "Space key released before 10 seconds, no action triggered."
-        );
+        console.debug('Space key released before 10 seconds, no action triggered.');
       } else {
         stopRecording();
       }
@@ -312,18 +255,15 @@ const MainView = () => {
     const scrollHeight = listRef.current?.scrollHeight ?? 0;
     listRef.current?.scrollTo({
       top: scrollHeight,
-      behavior: "instant",
+      behavior: 'instant',
     });
   }, [listRef.current?.scrollHeight, isUserManuallyScrollingUp]);
 
   // Play squance audio
   const playAudio = () => {
-    if (
-      audioURLIndex.current !== -1 &&
-      audioURL.current[audioURLIndex.current]
-    ) {
-      console.debug("Playing: ", audioURLIndex.current);
-      console.debug(audioURL.current[audioURLIndex.current], "Playing");
+    if (audioURLIndex.current !== -1 && audioURL.current[audioURLIndex.current]) {
+      console.debug('Playing: ', audioURLIndex.current);
+      console.debug(audioURL.current[audioURLIndex.current], 'Playing');
       const listener = new THREE.AudioListener();
       const audio = new THREE.Audio(listener);
       const audioLoader = new THREE.AudioLoader();
@@ -334,8 +274,7 @@ const MainView = () => {
 
           // Check if data contains non-zero values
           if (data.some((value) => value > 0)) {
-            const averageFrequency =
-              data.reduce((sum, value) => sum + value, 0) / data.length;
+            const averageFrequency = data.reduce((sum, value) => sum + value, 0) / data.length;
             setFrequency(averageFrequency);
           } else {
           }
@@ -349,25 +288,22 @@ const MainView = () => {
 
       load(audioURL.current[audioURLIndex.current], {
         autoplay: true,
-        format: "wav",
+        format: 'wav',
         initialMute: true,
 
         onload: () => {
-          audioLoader.load(
-            audioURL.current[audioURLIndex.current],
-            (buffer) => {
-              audio.setBuffer(buffer);
-              audioAnalyser.current = new THREE.AudioAnalyser(audio, 32);
-              console.debug(audioAnalyser.current, "audioAnalyser.current");
-              // Start playing the audio
-              audio.play();
-              setIsPlayingAudio(true);
-              // Delay the analysis to ensure the audio is playing
-              setTimeout(() => {
-                analyzeFrequency();
-              }, 100); // Wait 100ms before starting to analyze
-            }
-          );
+          audioLoader.load(audioURL.current[audioURLIndex.current], (buffer) => {
+            audio.setBuffer(buffer);
+            audioAnalyser.current = new THREE.AudioAnalyser(audio, 32);
+            console.debug(audioAnalyser.current, 'audioAnalyser.current');
+            // Start playing the audio
+            audio.play();
+            setIsPlayingAudio(true);
+            // Delay the analysis to ensure the audio is playing
+            setTimeout(() => {
+              analyzeFrequency();
+            }, 100); // Wait 100ms before starting to analyze
+          });
         },
 
         onstop() {
@@ -398,49 +334,13 @@ const MainView = () => {
     fetchTTS(messageId, text);
   };
 
-  const fetchTTS = async (messageId: string, text: string) => {
-    try {
-      const index = audioMapIndex.current + 1;
-      audioMapIndex.current += 1;
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        body: JSON.stringify({
-          text: text,
-          reference_id: messageId,
-          normalize: true,
-          format: "wav",
-          latency: "balanced",
-          max_new_tokens: 2048,
-          chunk_length: 200,
-          repetition_penalty: 1.5,
-        }),
-      });
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      audioURL.current[index] = audioUrl;
-
-      if (audioURLIndex.current === -1 && index === 0) {
-        audioURLIndex.current = 0;
-        playAudio();
-      } else if (
-        currentWaitingIndex.current !== -1 &&
-        currentWaitingIndex.current === index
-      ) {
-        audioURLIndex.current += 1;
-        playAudio();
-      }
-    } catch (error) {
-      console.error("Error fetching TTS audio:", error);
-    }
-  };
   // Handle submit
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Reset messages
-    currentText.current = "";
+    currentText.current = '';
     currentCount.current = 0;
-    lastMsg.current = "";
+    lastMsg.current = '';
     checkpoint.current = 10;
     audioURL.current = {};
     audioURLIndex.current = -1;
@@ -459,8 +359,7 @@ const MainView = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
-      audioContext = new ((window as any).AudioContext ||
-        (window as any).webkitAudioContext)();
+      audioContext = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
       const source = audioContext!.createMediaStreamSource(stream);
 
       analyser = audioContext!.createAnalyser();
@@ -484,12 +383,12 @@ const MainView = () => {
         cancelAnimationFrame(animationFrameId);
         waveBars.current.forEach((bar, i) => {
           if (bar) {
-            bar.style.height = "10px";
+            bar.style.height = '10px';
           }
         });
 
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
+          type: 'audio/webm',
         });
         const arrayBuffer = await audioBlob.arrayBuffer();
         const audioData = await audioContext.decodeAudioData(arrayBuffer);
@@ -505,29 +404,29 @@ const MainView = () => {
         });
 
         const wavBlob = new Blob([new Uint8Array(wavData)], {
-          type: "audio/wav",
+          type: 'audio/wav',
         });
 
         // const audioUrl = URL.createObjectURL(wavBlob);
         // setAudioURL(audioUrl);
 
         const formData = new FormData();
-        formData.append("file", wavBlob, "audio.wav");
+        formData.append('file', wavBlob, 'audio.wav');
 
         try {
-          const response = await fetch("/api/tokenize", {
-            method: "POST",
+          const response = await fetch('/api/tokenize', {
+            method: 'POST',
             body: formData,
           });
 
           if (!response.ok) {
-            throw new Error("Failed to tokenize audio");
+            throw new Error('Failed to tokenize audio');
           }
 
           const data = await response.json();
           setInput(`<|sound_start|>${data.tokens}`);
         } catch (error) {
-          console.error("Error tokenizing audio:", error);
+          console.error('Error tokenizing audio:', error);
           setIsPlayingAudio(false);
         }
       };
@@ -551,7 +450,7 @@ const MainView = () => {
       mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (error) {
-      console.error("Error starting recording:", error);
+      console.error('Error starting recording:', error);
       setIsPlayingAudio(false);
     }
   };
@@ -571,8 +470,8 @@ const MainView = () => {
     try {
       // Request microphone access
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      setPermission("granted");
-    } catch (error) { }
+      setPermission('granted');
+    } catch (error) {}
   };
 
   const longPressHandlers = useLongPress(startRecording, {
@@ -583,7 +482,7 @@ const MainView = () => {
 
   return (
     <main className="px-8 flex flex-col w-full h-svh overflow-hidden">
-      {permission === "denied" && <ModalPermissionDenied />}
+      {permission === 'denied' && <ModalPermissionDenied />}
 
       <div className="flex-shrink-0">
         <Navbar />
@@ -596,12 +495,7 @@ const MainView = () => {
             return (
               <div
                 key={i}
-                className={twMerge(
-                  "w-10 h-10 border border-border flex items-center justify-center rounded-lg cursor-pointer",
-                  os !== "undetermined" &&
-                  isActive &&
-                  "border-2 border-blue-600"
-                )}
+                className={twMerge('w-10 h-10 border border-border flex items-center justify-center rounded-lg cursor-pointer', os !== 'undetermined' && isActive && 'border-2 border-blue-600')}
                 onClick={() => setSelectedAudioVisualizer(item.id)}
               >
                 <p>{item.display}</p>
@@ -610,82 +504,40 @@ const MainView = () => {
           })}
         </div>
 
-        {os == "undetermined" ? (
+        {os == 'undetermined' ? (
           <Skeleton className="h-[300px] w-[300px] rounded-full" />
         ) : (
           <>
-            {selectedAudioVisualizer === "vertex" && (
+            {selectedAudioVisualizer === 'vertex' && (
               <div className="relative top-[50px] lg:top-0 w-full h-full">
                 <VertexAnimation frequency={frequency + 20} />
               </div>
             )}
-            {selectedAudioVisualizer === "gradient" && (
-              <GradientAnimtion frequency={frequency} isLoading={isLoading} />
-            )}
-            {selectedAudioVisualizer === "strawberry" && (
-              <StrawberryAnimation
-                frequency={frequency}
-                isLoading={isLoading}
-                isPlayingAudio={isPlayingAudio}
-              />
-            )}
-            {selectedAudioVisualizer === "old-straw" && (
-              <OldStrawberryAnimation
-                frequency={frequency}
-                isLoading={isLoading}
-                isPlayingAudio={isPlayingAudio}
-              />
-            )}
+            {selectedAudioVisualizer === 'gradient' && <GradientAnimtion frequency={frequency} isLoading={isLoading} />}
+            {selectedAudioVisualizer === 'strawberry' && <StrawberryAnimation frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />}
+            {selectedAudioVisualizer === 'old-straw' && <OldStrawberryAnimation frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />}
           </>
         )}
 
         <div
           className={twMerge(
-            "invisible flex flex-col overflow-x-hidden justify-between opacity-0 -right-80 w-full md:w-[400px] border border-border rounded-xl h-[calc(100%-24px)] absolute top-6 bg-background duration-500 transition-[transform, border-radius] z-40",
-            isChatVisible && "visible opacity-1 right-0"
+            'invisible flex flex-col overflow-x-hidden justify-between opacity-0 -right-80 w-full md:w-[400px] border border-border rounded-xl h-[calc(100%-24px)] absolute top-6 bg-background duration-500 transition-[transform, border-radius] z-40',
+            isChatVisible && 'visible opacity-1 right-0'
           )}
         >
-          <div
-            className="h-full overflow-x-hidden mt-2 mb-4"
-            ref={listRef}
-            onScroll={handleScroll}
-          >
-            <div
-              className={twMerge(
-                "space-y-4 h-full p-4",
-                !messages.length && "flex justify-center items-center"
-              )}
-            >
+          <div className="h-full overflow-x-hidden mt-2 mb-4" ref={listRef} onScroll={handleScroll}>
+            <div className={twMerge('space-y-4 h-full p-4', !messages.length && 'flex justify-center items-center')}>
               {!messages.length && (
                 <div className=" flex justify-center items-center flex-col w-full">
                   <h2 className="text-xl font-semibold">No chat history</h2>
-                  <p className="mt-1 text-muted-foreground">
-                    How can I help u today?
-                  </p>
+                  <p className="mt-1 text-muted-foreground">How can I help u today?</p>
                 </div>
               )}
               <div className="flex flex-col gap-4 overflow-x-hidden">
                 {messages.map((m) => {
-                  const displayContent =
-                    m.role === "user" ? (
-                      m.content.startsWith("<|sound_start|>") ? (
-                        <i>🔊 This is an audio message 🔊</i>
-                      ) : (
-                        m.content.split(" ").slice(0, 10).join(" ")
-                      )
-                    ) : (
-                      m.content
-                    );
+                  const displayContent = m.role === 'user' ? m.content.startsWith('<|sound_start|>') ? <i>🔊 This is an audio message 🔊</i> : m.content.split(' ').slice(0, 10).join(' ') : m.content;
                   return (
-                    <div
-                      key={m.id}
-                      className={twMerge(
-                        "px-3 py-1.5 rounded-lg max-w-[80%] shadow-sm",
-                        m.role === "user"
-                          ? "bg-foreground text-background ml-auto border"
-                          : "border "
-                      )}
-                    >
+                    <div key={m.id} className={twMerge('px-3 py-1.5 rounded-lg max-w-[80%] shadow-sm', m.role === 'user' ? 'bg-foreground text-background ml-auto border' : 'border ')}>
                       <p className="whitespace-pre-wrap">{displayContent}</p>
                     </div>
                   );
@@ -695,10 +547,7 @@ const MainView = () => {
           </div>
           <form onSubmit={handleFormSubmit}>
             <div className="relative">
-              <IoSend
-                size={20}
-                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
-              />
+              <IoSend size={20} className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer" />
               <Input
                 ref={inputRef}
                 value={maskingValueInput}
@@ -706,8 +555,8 @@ const MainView = () => {
                 onClick={handleFormSubmit}
                 onChange={(e) => {
                   handleInputChange(e);
-                  if (e.target.value.includes("<|sound_start|>")) {
-                    setInput("This is an audio message");
+                  if (e.target.value.includes('<|sound_start|>')) {
+                    setInput('This is an audio message');
                   }
                 }}
                 type="text"
@@ -721,12 +570,7 @@ const MainView = () => {
 
       <div className="flex flex-shrink-0 justify-center items-center h-32 lg:h-48 relative w-full ">
         <div className="flex flex-col justify-center items-center gap-4 ">
-          <div
-            className={twMerge(
-              "flex gap-3 justify-center items-end w-full p-4 rounded-lg absolute -top-24 h-20 invisible",
-              isRecording && "visible"
-            )}
-          >
+          <div className={twMerge('flex gap-3 justify-center items-end w-full p-4 rounded-lg absolute -top-24 h-20 invisible', isRecording && 'visible')}>
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -735,14 +579,12 @@ const MainView = () => {
                 }}
                 className="w-2 rounded-md transition-[height] ease-in-out duration-150 bg-red-200"
                 style={{
-                  height: "10px", // Initial height
+                  height: '10px', // Initial height
                 }}
               />
             ))}
           </div>
-          <p className={twMerge("text-xs invisible", isRecording && "visible")}>
-            {formatTime(time)}
-          </p>
+          <p className={twMerge('text-xs invisible', isRecording && 'visible')}>{formatTime(time)}</p>
           <div className="flex">
             {isPlayingAudio && (
               <Button
@@ -754,28 +596,14 @@ const MainView = () => {
               </Button>
             )}
             {/* Mobile */}
-            {permission === "granted" && (
+            {permission === 'granted' && (
               <div
-                className={twMerge(
-                  "relative w-16 h-16 justify-center items-center cursor-pointer btn-custom flex lg:hidden",
-                  (isPlayingAudio || isLoading) &&
-                  "pointer-events-none opacity-50"
-                )}
+                className={twMerge('relative w-16 h-16 justify-center items-center cursor-pointer btn-custom flex lg:hidden', (isPlayingAudio || isLoading) && 'pointer-events-none opacity-50')}
                 {...longPressHandlers}
               >
-                <svg
-                  className="absolute top-0 left-0 w-full h-full"
-                  viewBox="0 0 36 36"
-                >
+                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 36 36">
                   {/* Static White Border */}
-                  <circle
-                    className="stroke-foreground/50"
-                    strokeWidth="1.5"
-                    fill="transparent"
-                    r={radius}
-                    cx="18"
-                    cy="18"
-                  />
+                  <circle className="stroke-foreground/50" strokeWidth="1.5" fill="transparent" r={radius} cx="18" cy="18" />
                   {/* Animated Stroke */}
                   {isRecording && (
                     <circle
@@ -788,45 +616,26 @@ const MainView = () => {
                       strokeDasharray={circumference}
                       strokeDashoffset={dashOffset}
                       style={{
-                        transition: "stroke-dashoffset 1s linear", // Animate stroke
-                        transform: "rotate(-90deg)", // Rotate to start from the top
-                        transformOrigin: "50% 50%", // Set the rotation center
+                        transition: 'stroke-dashoffset 1s linear', // Animate stroke
+                        transform: 'rotate(-90deg)', // Rotate to start from the top
+                        transformOrigin: '50% 50%', // Set the rotation center
                       }}
                     />
                   )}
                 </svg>
 
-                <div
-                  className={twMerge(
-                    "w-9 h-9 rounded-full bg-red-500 transition-all duration-300 ease-linear",
-                    isRecording && "w-6 h-6 rounded-sm bg-red-500"
-                  )}
-                />
+                <div className={twMerge('w-9 h-9 rounded-full bg-red-500 transition-all duration-300 ease-linear', isRecording && 'w-6 h-6 rounded-sm bg-red-500')} />
               </div>
             )}
             {/* Desktop */}
-            {permission === "granted" && (
+            {permission === 'granted' && (
               <div
-                className={twMerge(
-                  "relative w-16 h-16 justify-center items-center cursor-pointer btn-custom hidden lg:flex",
-                  (isPlayingAudio || isLoading) &&
-                  "pointer-events-none opacity-50"
-                )}
+                className={twMerge('relative w-16 h-16 justify-center items-center cursor-pointer btn-custom hidden lg:flex', (isPlayingAudio || isLoading) && 'pointer-events-none opacity-50')}
                 onClick={isRecording ? stopRecording : startRecording}
               >
-                <svg
-                  className="absolute top-0 left-0 w-full h-full"
-                  viewBox="0 0 36 36"
-                >
+                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 36 36">
                   {/* Static White Border */}
-                  <circle
-                    className="stroke-foreground/50"
-                    strokeWidth="1.5"
-                    fill="transparent"
-                    r={radius}
-                    cx="18"
-                    cy="18"
-                  />
+                  <circle className="stroke-foreground/50" strokeWidth="1.5" fill="transparent" r={radius} cx="18" cy="18" />
                   {/* Animated Stroke */}
                   {isRecording && (
                     <circle
@@ -839,114 +648,63 @@ const MainView = () => {
                       strokeDasharray={circumference}
                       strokeDashoffset={dashOffset}
                       style={{
-                        transition: "stroke-dashoffset 1s linear", // Animate stroke
-                        transform: "rotate(-90deg)", // Rotate to start from the top
-                        transformOrigin: "50% 50%", // Set the rotation center
+                        transition: 'stroke-dashoffset 1s linear', // Animate stroke
+                        transform: 'rotate(-90deg)', // Rotate to start from the top
+                        transformOrigin: '50% 50%', // Set the rotation center
                       }}
                     />
                   )}
                 </svg>
 
-                <div
-                  className={twMerge(
-                    "w-9 h-9 rounded-full bg-red-500 transition-all duration-300 ease-linear",
-                    isRecording && "w-6 h-6 rounded-sm bg-red-500"
-                  )}
-                />
+                <div className={twMerge('w-9 h-9 rounded-full bg-red-500 transition-all duration-300 ease-linear', isRecording && 'w-6 h-6 rounded-sm bg-red-500')} />
               </div>
             )}
           </div>
 
-          {permission === "granted" && (
+          {permission === 'granted' && (
             <span className="hidden md:block text-xs">
-              {os === "undetermined" ? (
+              {os === 'undetermined' ? (
                 <Skeleton className="h-4 w-[80px]" />
               ) : (
-                <span
-                  className={twMerge(
-                    (isPlayingAudio || isLoading) &&
-                    "pointer-events-none opacity-50"
-                  )}
-                >
-                  Hold space to talk to ichigo
-                </span>
+                <span className={twMerge((isPlayingAudio || isLoading) && 'pointer-events-none opacity-50')}>Hold space to talk to ichigo</span>
               )}
             </span>
           )}
 
-          {permission === "granted" && (
+          {permission === 'granted' && (
             <span className="block md:hidden text-xs mb-8">
-              {os === "undetermined" ? (
+              {os === 'undetermined' ? (
                 <Skeleton className="h-4 w-[80px]" />
               ) : (
-                <span
-                  className={twMerge(
-                    (isPlayingAudio || isLoading) &&
-                    "pointer-events-none opacity-50"
-                  )}
-                >
-                  Press and hold record button to talk
-                </span>
+                <span className={twMerge((isPlayingAudio || isLoading) && 'pointer-events-none opacity-50')}>Press and hold record button to talk</span>
               )}
             </span>
           )}
-          {permission === "prompt" && (
-            <Button onClick={requestMicrophonePermission}>
-              Activate Microphone
-            </Button>
-          )}
-          {permission === undefined && (
-            <Button onClick={requestMicrophonePermission}>
-              Activate Microphone
-            </Button>
-          )}
+          {permission === 'prompt' && <Button onClick={requestMicrophonePermission}>Activate Microphone</Button>}
+          {permission === undefined && <Button onClick={requestMicrophonePermission}>Activate Microphone</Button>}
         </div>
 
-        <div
-          className={twMerge(
-            "absolute right-0 bottom-8 lg:bottom-16 transition-colors duration-500"
-          )}
-        >
+        <div className={twMerge('absolute right-0 bottom-8 lg:bottom-16 transition-colors duration-500')}>
           <div className="flex gap-4 items-center">
-            <span className="hidden md:block text-xs">
-              {os == "undetermined" ? (
-                <Skeleton className="h-4 w-[40px]" />
-              ) : (
-                <>{isMac ? "⌘" : "Ctrl"} + B</>
-              )}
-            </span>
-            <IoChatbubbleEllipsesSharp
-              size={28}
-              onClick={() => setIsChatVisible(!isChatVisible)}
-              className={twMerge(
-                "cursor-pointer",
-                isChatVisible && "dark:text-blue-300 text-blue-700 "
-              )}
-            />
+            <span className="hidden md:block text-xs">{os == 'undetermined' ? <Skeleton className="h-4 w-[40px]" /> : <>{isMac ? '⌘' : 'Ctrl'} + B</>}</span>
+            <IoChatbubbleEllipsesSharp size={28} onClick={() => setIsChatVisible(!isChatVisible)} className={twMerge('cursor-pointer', isChatVisible && 'dark:text-blue-300 text-blue-700 ')} />
           </div>
         </div>
 
-        {permission === "granted" && (
+        {permission === 'granted' && (
           <div
             className={twMerge(
-              "fixed z-20 p-4 border border-border rounded-lg mb-2 -left-80 bottom-24 invisible transition-all duration-500 bg-background",
-              isSettingVisible && "visible opacity-1 left-0"
+              'fixed z-20 p-4 border border-border rounded-lg mb-2 -left-80 bottom-24 invisible transition-all duration-500 bg-background',
+              isSettingVisible && 'visible opacity-1 left-0'
             )}
           >
             <AudioSelector />
           </div>
         )}
 
-        {permission === "granted" && (
+        {permission === 'granted' && (
           <div className="absolute left-0 bottom-4 lg:bottom-14 w-10 h-10">
-            <IoSettingsSharp
-              size={28}
-              onClick={() => setIsSettingVisible(!isSettingVisible)}
-              className={twMerge(
-                "cursor-pointer",
-                isSettingVisible && "dark:text-blue-300 text-blue-700 "
-              )}
-            />
+            <IoSettingsSharp size={28} onClick={() => setIsSettingVisible(!isSettingVisible)} className={twMerge('cursor-pointer', isSettingVisible && 'dark:text-blue-300 text-blue-700 ')} />
           </div>
         )}
       </div>

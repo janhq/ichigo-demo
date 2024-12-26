@@ -1,0 +1,67 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "always",
+    "source.sortImports": "explicit",
+    "source.fixAll.pylance": "always",
+    "source.convertImportFormat": "always",
+    "source.unusedImports": "always"
+  },
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "prettier.semi": true,
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "es5",
+  "prettier.tabWidth": 2,
+  "prettier.printWidth": 80,
+  "prettier.bracketSpacing": true,
+  "prettier.arrowParens": "always",
+  "prettier.jsxSingleQuote": false,
+  "prettier.bracketSameLine": false,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.exclude": { "**/__pycache__": true, "**/venv": true },
+  "search.exclude": { "**/__pycache__": true, "**/venv": true },
+  "eslint.options": {
+    "rules": { "max-len": ["error", { "code": 200 }] }
+  },
+  "files.trimTrailingWhitespace": false,
+  "files.trimFinalNewlines": true,
+  "files.enableTrash": true,
+
+  "powermode.combo.counterEnabled": "hide",
+  "powermode.combo.location": "editor",
+  "powermode.combo.timerEnabled": "hide",
+  "powermode.combo.timeout": 0,
+  "powermode.enabled": true,
+  "powermode.explosions.duration": 0,
+  "powermode.explosions.backgroundMode": "image",
+  "powermode.explosions.explosionOrder": "sequential",
+  "powermode.explosions.customExplosions": [
+    "https://imgur.com/rnZsOZ5.gif",
+    "https://imgur.com/uJLLDxL.gif",
+    "https://imgur.com/nfgkSBD.gif",
+    "https://imgur.com/XtEndkX.gif",
+    "https://imgur.com/nfgkSBD.gif",
+    "https://imgur.com/0IwIuv2.gif",
+    "https://imgur.com/nfgkSBD.gif"
+  ],
+  "powermode.explosions.customCss": {
+    "top": "-2.4rem",
+    "z-index": -1
+  },
+  "powermode.explosions.size": 5,
+  "powermode.shake.intensity": 0
+}
