@@ -1,6 +1,6 @@
 'use client';
+import AudioSettings from '@/app/components/Audio/AudioSettings';
 import SocialLinks from '@/app/components/Navbar/SocialLinks';
-import AudioSelector from '@/components/ui/audioSelector';
 import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOs } from '@/hooks/useOs';
@@ -17,11 +17,11 @@ import WavEncoder from 'wav-encoder';
 import { audioVisualizerAtom } from './atoms/audioVisualizer';
 import AudioControllers from './components/Audio/AudioControllers';
 import AudioVisualizers from './components/Audio/AudioVisualizers';
-import ChatInput from './components/Chat/ChatInput';
-import ChatMessages from './components/Chat/ChatMessages';
+import ChatPanel from './components/Chat/ChatPanel';
+import { punctuation } from './types/chat';
 
 let spaceKeyHeld = false;
-let spaceKeyTimer: ReturnType<typeof setTimeout> | null = null; // Define the correct type for setTimeout
+let spaceKeyTimer: ReturnType<typeof setTimeout> | null = null;
 let longPressTriggered = false;
 
 const MainView = () => {
@@ -53,11 +53,9 @@ const MainView = () => {
   const maxTime = 10;
   const [time, setTime] = useState(0);
 
-  const [permission, setPermission] = useState<PermissionState>(); // Microphone permission state
+  const [permission, setPermission] = useState<PermissionState>();
 
   const [] = useAtom(audioVisualizerAtom);
-
-  const punctuation = ['.', ',', '!', '?', ':', ';', '"', "'", '(', ')', '[', ']', '{', '}', '-', '--', '...', '/', '\\'];
 
   const { input, isLoading, messages, handleInputChange, handleSubmit, setInput } = useChat({
     keepLastMessageOnError: true,
@@ -65,8 +63,6 @@ const MainView = () => {
       if (currentText.current) {
         addToFetchQueue(message.id, currentText.current);
       }
-
-      console.debug('send on Finish: ', currentText.current);
     },
   });
 
@@ -81,7 +77,6 @@ const MainView = () => {
         });
         setPermission(micPermission.state as PermissionState);
 
-        // Watch for permission changes
         micPermission.onchange = () => {
           setPermission(micPermission.state as PermissionState);
         };
@@ -93,7 +88,6 @@ const MainView = () => {
     checkMicrophonePermission();
   }, []);
 
-  // Update the timer every second while recording
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRecording) {
@@ -102,14 +96,13 @@ const MainView = () => {
           setTime(prev => prev + 1);
         }, 1000);
       } else {
-        setIsRecording(false); // Automatically stop recording when max time is reached
+        setIsRecording(false);
       }
     }
 
     return () => clearInterval(interval);
   }, [isRecording, time]);
 
-  // Send chat message
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
 
@@ -119,22 +112,18 @@ const MainView = () => {
 
     const chunkSize = checkpoint.current ?? 400;
 
-    // console.debug("send first: ", newWord, punctuation.includes(newWord),currentCount.current , checkpoint.current);
     if (currentCount.current < chunkSize) {
       currentText.current = currentText.current + newWord;
     } else if (currentCount.current < 60 && punctuation.includes(newWord)) {
-      console.debug('send first: ', currentText.current);
       if (currentText.current) {
         addToFetchQueue(lastMessage.id, currentText.current);
       }
       checkpoint.current = 60;
-      currentText.current = ''; // in case of punctuation, reset the text
+      currentText.current = '';
       currentCount.current = 0;
     } else if (chunkSize === 10) {
-      // first chunk
       currentText.current = currentText.current + newWord;
     } else {
-      console.debug('send: ', currentText.current);
       if (currentText.current) {
         addToFetchQueue(lastMessage.id, currentText.current);
       }
@@ -147,7 +136,6 @@ const MainView = () => {
     lastMsg.current = lastMessage?.content;
   }, [messages]);
 
-  // Send message when user stop record
   useEffect(() => {
     const preventDefault = {
       preventDefault: function () {
@@ -166,33 +154,29 @@ const MainView = () => {
   const os = useOs();
   const isMac = os === 'macos';
 
-  // Make the input focus when the chat is open.
   useEffect(() => {
     if (isChatVisible && inputRef.current) {
       const timeoutId = setTimeout(() => {
         inputRef.current?.focus();
-      }, 500); // A timeout is needed because the element is invisible due to its parent, and there is a transition duration.
+      }, 500);
 
       return () => clearTimeout(timeoutId);
     }
   }, [isChatVisible]);
 
-  // Hotkey toogle chatbox and record audio
   useWindowEvent('keydown', event => {
     const prefix = isMac ? event.metaKey : event.ctrlKey;
 
-    // Toggle chat visibility with Ctrl/Command + B
     if (event.code === 'KeyB' && prefix) {
       setIsChatVisible(!isChatVisible);
     }
 
-    // // Handle space key press (start timer for long press)
     if (event.code === 'Space' && event.repeat && !spaceKeyHeld) {
       spaceKeyHeld = true;
-      longPressTriggered = false; // Reset the long press trigger
+      longPressTriggered = false;
 
       spaceKeyTimer = setTimeout(() => {
-        longPressTriggered = true; // Mark that a long press has been triggered
+        longPressTriggered = true;
         if (!isLoading && !isPlayingAudio) {
           if (isRecording) {
             stopRecording();
@@ -208,18 +192,15 @@ const MainView = () => {
     if (event.code === 'Space') {
       if (spaceKeyTimer !== null) {
         clearTimeout(spaceKeyTimer);
-        spaceKeyTimer = null; // Reset the timer to null after clearing it
+        spaceKeyTimer = null;
       }
 
       spaceKeyHeld = false;
-      spaceKeyHeld = false;
 
-      // Do nothing if long press wasn't triggered
       if (!longPressTriggered) {
         event.preventDefault();
         event.stopPropagation();
         stopRecording();
-        console.debug('Space key released before 10 seconds, no action triggered.');
       } else {
         stopRecording();
       }
@@ -252,11 +233,8 @@ const MainView = () => {
     });
   }, [listRef.current?.scrollHeight, isUserManuallyScrollingUp]);
 
-  // Play squance audio
   const playAudio = () => {
     if (audioURLIndex.current !== -1 && audioURL.current[audioURLIndex.current]) {
-      console.debug('Playing: ', audioURLIndex.current);
-      console.debug(audioURL.current[audioURLIndex.current], 'Playing');
       const listener = new THREE.AudioListener();
       const audio = new THREE.Audio(listener);
       const audioLoader = new THREE.AudioLoader();
@@ -265,14 +243,11 @@ const MainView = () => {
         if (audioAnalyser.current) {
           const data = audioAnalyser.current.getFrequencyData();
 
-          // Check if data contains non-zero values
           if (data.some(value => value > 0)) {
             const averageFrequency = data.reduce((sum, value) => sum + value, 0) / data.length;
             setFrequency(averageFrequency);
-          } else {
           }
 
-          // Call analyzeFrequency again if the audio is still playing
           if (audio.isPlaying) {
             requestAnimationFrame(analyzeFrequency);
           }
@@ -288,14 +263,11 @@ const MainView = () => {
           audioLoader.load(audioURL.current[audioURLIndex.current], buffer => {
             audio.setBuffer(buffer);
             audioAnalyser.current = new THREE.AudioAnalyser(audio, 32);
-            console.debug(audioAnalyser.current, 'audioAnalyser.current');
-            // Start playing the audio
             audio.play();
             setIsPlayingAudio(true);
-            // Delay the analysis to ensure the audio is playing
             setTimeout(() => {
               analyzeFrequency();
-            }, 100); // Wait 100ms before starting to analyze
+            }, 100);
           });
         },
 
@@ -309,7 +281,6 @@ const MainView = () => {
             audioURLIndex.current = audioURLIndex.current + 1;
             playAudio();
           } else if (audioURLIndex.current + 1 < audioMapIndex.current) {
-            // It's not ready yet
             currentWaitingIndex.current = audioURLIndex.current + 1;
           } else {
             setIsPlayingAudio(false);
@@ -360,10 +331,9 @@ const MainView = () => {
       console.error('Error fetching TTS audio:', error);
     }
   };
-  // Handle submit
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Reset messages
     currentText.current = '';
     currentCount.current = 0;
     lastMsg.current = '';
@@ -372,11 +342,9 @@ const MainView = () => {
     audioURLIndex.current = -1;
     audioMapIndex.current = -1;
     currentWaitingIndex.current = -1;
-    // setIsStopAudio(false);
     handleSubmit(e);
   };
 
-  // Start recording audio
   const startRecording = async () => {
     let analyser: AnalyserNode | null = null;
     let dataArray: Uint8Array;
@@ -401,8 +369,6 @@ const MainView = () => {
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        console.debug(audioContext);
-        // setIsPlayingAudio(true);
         if (audioContext) {
           audioContext.close();
         }
@@ -433,9 +399,6 @@ const MainView = () => {
           type: 'audio/wav',
         });
 
-        // const audioUrl = URL.createObjectURL(wavBlob);
-        // setAudioURL(audioUrl);
-
         const formData = new FormData();
         formData.append('file', wavBlob, 'audio.wav');
 
@@ -460,10 +423,9 @@ const MainView = () => {
       const animateWave = () => {
         analyser!.getByteFrequencyData(dataArray);
 
-        // Adjust each bar height based on audio frequency data
         waveBars.current.forEach((bar, i) => {
           const value = dataArray[i];
-          const barHeight = (value / 255) * 100; // Normalize to 100%
+          const barHeight = (value / 255) * 100;
           if (bar) {
             bar.style.height = `${barHeight}px`;
           }
@@ -481,7 +443,6 @@ const MainView = () => {
     }
   };
 
-  // stop recording audio
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -495,24 +456,25 @@ const MainView = () => {
   return (
     <main className="px-8 flex flex-col w-full h-svh overflow-hidden">
       {permission === 'denied' && <ModalPermissionDenied />}
-
       <div className="flex-shrink-0">
         <SocialLinks />
       </div>
       <div className="h-full bg-background flex justify-center items-center relative">
         <AudioVisualizers frequency={frequency} isLoading={isLoading} isPlayingAudio={isPlayingAudio} />
-
-        <div
-          className={twMerge(
-            'invisible flex flex-col overflow-x-hidden justify-between opacity-0 -right-80 w-full md:w-[400px] border border-border rounded-xl h-[calc(100%-24px)] absolute top-6 bg-background duration-500 transition-[transform, border-radius] z-40',
-            isChatVisible && 'visible opacity-1 right-0',
-          )}
-        >
-          <ChatMessages messages={messages as Message[]} containerRef={listRef} onScroll={handleScroll} />
-          <ChatInput ref={inputRef} inputValue={maskingValueInput} isDisabled={isPlayingAudio || isLoading} onSubmit={handleFormSubmit} onInputChange={handleInputChange} setInput={setInput} />
-        </div>
+        <ChatPanel
+          isChatVisible={isChatVisible}
+          messages={messages as Message[]}
+          maskingValueInput={maskingValueInput}
+          isPlayingAudio={isPlayingAudio}
+          isLoading={isLoading}
+          inputRef={inputRef}
+          listRef={listRef}
+          handleScroll={handleScroll}
+          handleFormSubmit={handleFormSubmit}
+          handleInputChange={handleInputChange}
+          setInput={setInput}
+        />
       </div>
-
       <div className="flex flex-shrink-0 justify-center items-center h-32 lg:h-48 relative w-full ">
         <AudioControllers
           isRecording={isRecording}
@@ -526,7 +488,6 @@ const MainView = () => {
           stopRecording={stopRecording}
           stopAudio={stop}
         />
-
         <div className={twMerge('absolute right-0 bottom-8 lg:bottom-16 transition-colors duration-500')}>
           <div className="flex gap-4 items-center">
             <span className="hidden md:block text-xs">{os == 'undetermined' ? <Skeleton className="h-4 w-[40px]" /> : <>{isMac ? '⌘' : 'Ctrl'} + B</>}</span>
@@ -534,16 +495,7 @@ const MainView = () => {
           </div>
         </div>
 
-        {permission === 'granted' && (
-          <div
-            className={twMerge(
-              'fixed z-20 p-4 border border-border rounded-lg mb-2 -left-80 bottom-24 invisible transition-all duration-500 bg-background',
-              isSettingVisible && 'visible opacity-1 left-0',
-            )}
-          >
-            <AudioSelector />
-          </div>
-        )}
+        {permission === 'granted' && <AudioSettings isVisible={isSettingVisible} />}
 
         {permission === 'granted' && (
           <div className="absolute left-0 bottom-4 lg:bottom-14 w-10 h-10">
