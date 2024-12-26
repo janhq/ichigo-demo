@@ -7,7 +7,6 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
 
     // Set up the fetch request to forward the file to the external API
-    console.log(process.env.TOKENIZE_BASE_URL);
     const response = await fetch(process.env.TOKENIZE_BASE_URL + '/tokenize', {
       method: 'POST',
       body: formData, // Forward the formData body directly

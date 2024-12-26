@@ -1,4 +1,5 @@
 'use client';
+import SocialLinks from '@/app/components/Navbar/SocialLinks';
 import GradientAnimtion from '@/components/animations/gradientAnimation';
 import OldStrawberryAnimation from '@/components/animations/oldStraberry';
 import StrawberryAnimation from '@/components/animations/strawberryAnimation';
@@ -6,7 +7,6 @@ import VertexAnimation from '@/components/animations/vertexAnimnation';
 import AudioSelector from '@/components/ui/audioSelector';
 import { Button } from '@/components/ui/button';
 import { ModalPermissionDenied } from '@/components/ui/modalPemissionDenied';
-import Navbar from '@/components/ui/navbar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOs } from '@/hooks/useOs';
 import { useWindowEvent } from '@/hooks/useWindowEvent';
@@ -23,9 +23,9 @@ import * as THREE from 'three';
 import { setTimeout } from 'timers';
 import WavEncoder from 'wav-encoder';
 import { audioVisualizerAtom } from './atoms/audioVisualizer';
+import AudioVisualizers from './components/Audio/AudioVisualizers';
 import ChatInput from './components/Chat/ChatInput';
 import ChatMessages from './components/Chat/ChatMessages';
-import { audioVisualizerList } from './types/chat';
 
 let spaceKeyHeld = false;
 let spaceKeyTimer: ReturnType<typeof setTimeout> | null = null; // Define the correct type for setTimeout
@@ -520,25 +520,11 @@ const MainView = () => {
       {permission === 'denied' && <ModalPermissionDenied />}
 
       <div className="flex-shrink-0">
-        <Navbar />
+        <SocialLinks />
       </div>
 
       <div className="h-full bg-background flex justify-center items-center relative">
-        <div className="absolute top-10 left-0 flex gap-2 z-20">
-          {audioVisualizerList.map((item, i) => {
-            const isActive = selectedAudioVisualizer === item.id;
-            return (
-              <div
-                key={i}
-                className={twMerge('w-10 h-10 border border-border flex items-center justify-center rounded-lg cursor-pointer', os !== 'undetermined' && isActive && 'border-2 border-blue-600')}
-                onClick={() => setSelectedAudioVisualizer(item.id)}
-              >
-                <p>{item.display}</p>
-              </div>
-            );
-          })}
-        </div>
-
+        <AudioVisualizers />
         {os == 'undetermined' ? (
           <Skeleton className="h-[300px] w-[300px] rounded-full" />
         ) : (

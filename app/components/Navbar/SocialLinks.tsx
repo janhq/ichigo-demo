@@ -1,12 +1,11 @@
-import React from "react";
-import { FaDiscord, FaGithub } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaDiscord, FaGithub } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 
-import Logo from "./logo";
-import ThemeSwitch from "./themeSwitch";
-import RealtimeTracker from "./realtimeTracker";
+import Logo from '../../../components/ui/logo';
+import RealtimeTracker from '../../../components/ui/realtimeTracker';
+import ThemeSwitch from '../../../components/ui/themeSwitch';
 
-const Navbar = () => {
+const SocialLinks = () => {
   return (
     <nav className="h-20 flex justify-between items-center">
       <div className="flex gap-2">
@@ -30,4 +29,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default SocialLinks;

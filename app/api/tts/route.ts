@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  // console.log(req.json(), "req");
   try {
     const { text, messageId } = await req.json();
     // Set up the fetch request to forward the data to the external API
