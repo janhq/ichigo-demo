@@ -156,7 +156,7 @@ def load_model(
         k.replace("model.", ""): v for k, v in spec["state_dict"].items()
     }
     required_components = {
-        'rq', 'mlp', 'mlp_ln'
+        'rq', 'mlp', 'mlp_ln', "_codebook_usage"
     }
     filtered_state_dict = {
         k: v for k, v in model_state_dict.items()

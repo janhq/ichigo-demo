@@ -23,8 +23,7 @@ def available_models() -> List[str]:
     return list(_HF_MODELS.keys())
 def _download(url: str, root: str, in_memory: bool) -> Union[bytes, str]:
     os.makedirs(root, exist_ok=True)
-
-    expected_sha256 = url.split("/")[-2]
+    
     download_target = os.path.join(root, os.path.basename(url))
 
     if os.path.exists(download_target) and not os.path.isfile(download_target):
