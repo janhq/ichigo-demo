@@ -7,9 +7,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from transformers import WhisperModel, WhisperProcessor
 import uvicorn
-from huggingface_hub import hf_hub_download
-from whisperspeech.vq_stoks import RQBottleneckTransformer
-from custom_component import CustomRQBottleneckTransformer   
+from utils import load_model, convert_ids_to_tokens
 import logging
 import io
 from enum import Enum
@@ -22,19 +20,14 @@ logger = logging.getLogger(__name__)
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Use the first GPU
 app = FastAPI()
 
+ichigo_name = "homebrewltd/Ichigo-whisper-v0.1:merge-medium-vi-2d-2560c-dim64.pth"
+model_size = "merge-medium-vi-2d-2560c-dim64"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-if not os.path.exists("whisper-vq-stoks-v3-7lang-fixed.model"):
-    hf_hub_download(
-        repo_id="jan-hq/WhisperVQ",
-        filename="whisper-vq-stoks-v3-7lang-fixed.model",
-        local_dir=".",
-    )
-vq_model = CustomRQBottleneckTransformer.load_vq_only(
-            "whisper-vq-stoks-v3-7lang-fixed.model"
-        ).to(device)
-vq_model.load_encoder(device)
-vq_model.eval()
+
+vq_model = load_model(ref=ichigo_name, size=model_size)
+vq_model.setup(device=device)
+vq_model.to(device)
 vq_model = torch.compile(vq_model)
 
 
@@ -179,15 +172,14 @@ async def tokenize_audio(format: AudioFormat = "wav", file: UploadFile = File(..
 
         # Generate tokens
         with torch.no_grad():
-            codes = vq_model.encode_audio(wav)
+            codes = vq_model.quantize(wav.to(device))
             codes = codes[0].cpu().tolist()
-
-        # Format result
-        result = ''.join(f'<|sound_{num:04d}|>' for num in codes)
+        
+        result = convert_ids_to_tokens(codes)
 
         return JSONResponse(content={
-            "model_name": "whisper-vq-stoks-v3-7lang-fixed.model",
-            "tokens": f'<|sound_start|>{result}<|sound_end|>',
+            "model_name": "Ichigo-whisper-v0.1",
+            "tokens": f'{result}',
             "format": format,
             "sample_rate": sr,
             "backend_used": audio_processor._get_best_backend(format)

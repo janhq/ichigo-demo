@@ -1,24 +1,10 @@
-openai-whisper==20231117
+openai_whisper==20240930
+torch==2.5.1
+torchaudio==2.5.1
 huggingface_hub
-IPython
-pyarrow
-matplotlib
-librosa
-soundfile
-datasets
-encodec
-boto3
-fire
-vector_quantize_pytorch
-webdataset
-whisperspeech
---extra-index-url https://download.pytorch.org/whl/cu121
-torch==2.2.0
-torchaudio==2.2.0
-numpy==1.26.4
+ichigo-whisper==2.3.0
 fastapi
 uvicorn
-
 python-multipart
 transformers
 
