@@ -1,4 +1,4 @@
-FROM docker.io/pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+FROM docker.io/pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 # Set the MKL_SERVICE_FORCE_INTEL environment variable
 ENV MKL_SERVICE_FORCE_INTEL=1
