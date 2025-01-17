@@ -20,6 +20,7 @@ RUN apt-get update \
     git \
     git-lfs \
     jq \
+    ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

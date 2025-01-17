@@ -2,8 +2,8 @@ import requests
 
 formats = ["wav", "mp3", "flac", "aac", "ogg", "opus", "pcm"]
 file_paths = {
-    "mp3": "/home/root/BachVD/ichigo-demo/docker/whisper/samples/ref.mp3",
-    "opus": "/home/root/BachVD/ichigo-demo/docker/whisper/samples/sample-3.opus",
+    "mp3": "samples/ref.mp3",
+    "opus": "samples/sample-3.opus",
     # Add paths to your other audio files here
 }
 
